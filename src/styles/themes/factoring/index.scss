@@ -1,0 +1,76 @@
+// 横向菜单栏颜色
+.jvs-tags {
+    .jvs-tags__box {
+        .lineBox .system-list .activeSysItem {
+            color: #C7000A;
+        }
+    }
+}
+
+// 个人中心
+.el-dropdown-menu {
+    .el-dropdown-menu__item:hover {
+        background-color: #C7000A;
+        color: #fff;
+    }
+}
+
+.app-container {
+    .el-card {
+        .basic-container {
+            .el-tabs {
+                .el-tabs__active-bar {
+                    background-color: #C7000A;
+                }
+                .el-tabs__item:hover {
+                    color: #C7000A;
+                }
+                .el-tabs__item.is-active {
+                    color: #C7000A;
+                }
+                .el-button {
+                    border-color: #C7000A;
+                }
+                .el-button:hover {
+                    background-color: #F56C6C;
+                    border-color: #F56C6C;
+                    color: #fff;
+                }
+                .el-button--primary {
+                    background-color: #C7000A;
+                }
+                .el-button--default {
+                    color: #C7000A;
+                }
+            }
+        }
+    }
+}
+
+// 左侧菜单颜色
+.menu-wrapper {
+    .notmove {
+        .el-menu-item.is-active {
+            background-color: #C7000A;
+        }
+        .el-submenu .el-submenu__title:hover {
+            background-color: #C7000A;
+        }
+        .el-menu-item:hover {
+            background-color: #C7000A !important;
+        }
+    }
+}
+
+// 面包屑颜色
+.top-nav-bar-box {
+    .el-tabs--card>.el-tabs__header .el-tabs__item.is-active {
+        color: #C7000A;
+        border-bottom-color: #C7000A;
+    }
+}
+
+// logo颜色
+.jvs-logo {
+    background-color: #C7000A !important;
+}

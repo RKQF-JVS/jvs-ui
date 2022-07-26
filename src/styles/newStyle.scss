@@ -1,0 +1,115 @@
+// 字体
+.theme-box{
+  font-family: SourceHanSansCN-Regular;
+}
+
+ // 填充背景
+.jvs-contail{
+  background: #F6F6F6;
+}
+
+// 折叠后菜单栏
+.jvs-contail.jvs--collapse{
+  .jvs-left{ // .jvs-logo
+    width: 80px !important;
+  }
+  .el-menu--collapse{
+    width: 80px;
+    .collapseNav{
+      .el-submenu__title{
+        text-align: center;
+        i:not(.el-submenu__icon-arrow){
+          margin-right: 0;
+        }
+      }
+    }
+  }
+  .jvs-main{
+    width: calc(100% - 80px)!important;
+    left: 80px!important;
+  }
+}
+
+// 左侧菜单收起展开图标，菜单项
+.jvs-sidebar{
+  .el-menu-scrollbar{
+    .el-scrollbar__wrap{
+      .menu-wrapper{
+        .el-icon-arrow-down::before{
+          content: "\e791"
+        }
+        .is-opened{
+          .el-icon-arrow-down::before{
+            content: "\e78f"
+          }
+        }
+      }
+    }
+  }
+  .el-menu-item, .el-submenu__title {
+    //font-size: 16px;
+    font-size: 14px;
+    i:not(.el-submenu__icon-arrow){
+      margin-right: 19px;
+    }
+    .el-submenu__icon-arrow{
+      right: 12px;
+    }
+  }
+}
+
+// 打开的菜单列表
+.jvs-view{
+  .outer-container{
+    .top-nav-bar-box{
+      height: 30px!important;
+      .el-tabs--card{
+        >.el-tabs__header{
+          .el-tabs__item.is-active{
+            .el-icon-close:hover{
+              color: #fff;
+            }
+          }
+        }
+      }
+    }
+    #mainIframe{
+      height: 100%;
+    }
+  }
+}
+
+// 折叠菜单--子项
+.el-menu--vertical{
+  .el-menu--popup-right-start{
+    margin: 0;
+    padding: 0;
+  }
+  .menu-item-li{
+    height: 40px;
+    line-height: 40px;
+    i{
+      display: none; // 隐藏子菜单icon
+    }
+  }
+}
+
+// 折叠放到--打开菜单列表--一行
+.top-nav-bar-box{
+  .showhide-menu-icon{
+    line-height: 30px;
+    font-size: 20px;
+    color: #868BA1;
+    margin-left: 10px;
+    margin-right: 15px;
+    cursor: pointer;
+  }
+}
+
+// 顶部导航
+.jvs-tags{
+  margin-bottom: 0;
+  .lineBox{
+
+  }
+}

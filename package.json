@@ -1,0 +1,75 @@
+{
+  "name": "jvs-ui",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "pre": "cnpm install || yarn --registry https://registry.npm.taobao.org || npm install --registry https://registry.npm.taobao.org ",
+    "dev": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "@antv/data-set": "^0.11.7",
+    "@antv/g2": "^4.0.15",
+    "@antv/g6": "^3.5.10",
+    "axios": "^0.19.0",
+    "babel-polyfill": "^6.26.0",
+    "bpmn-js": "^5.1.2",
+    "bpmn-moddle": "^6.0.0",
+    "classlist-polyfill": "^1.2.0",
+    "crypto-js": "^3.1.9-1",
+    "e-vue-contextmenu": "^0.1.3",
+    "echarts": "^5.1.2",
+    "element-ui": "^2.13.0",
+    "font-awesome": "^4.7.0",
+    "js-base64": "^3.6.1",
+    "js-cookie": "^2.2.1",
+    "js-pinyin": "^0.1.9",
+    "moment": "^2.24.0",
+    "nprogress": "^0.2.0",
+    "script-loader": "^0.7.2",
+    "sortablejs": "^1.11.2-alpha.3",
+    "sql-formatter": "^2.3.3",
+    "vue": "^2.6.10",
+    "vue-axios": "^2.1.4",
+    "vue-clipboard2": "^0.3.1",
+    "vue-codemirror": "^4.0.6",
+    "vue-draggable-resizable": "^2.3.0",
+    "vue-draggable-resizable-gorkys": "^2.4.4",
+    "vue-hljs": "^2.0.0",
+    "vue-marquee-tips": "^1.0.8",
+    "vue-router": "^3.1.3",
+    "vue-ruler-tool": "^1.2.4",
+    "vue-seamless-scroll": "^1.1.23",
+    "vue-waterfall-easy": "^2.4.4",
+    "vuedraggable": "^2.24.1",
+    "vuescroll": "^4.16.1",
+    "vuex": "^3.1.1",
+    "wangeditor": "^4.5.2"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^3.11.0",
+    "@vue/cli-plugin-eslint": "^3.8.0",
+    "@vue/cli-service": "^3.11.0",
+    "chai": "^4.2.0",
+    "node-sass": "^4.13.1",
+    "sass-loader": "^8.0.0",
+    "sass-resources-loader": "^2.0.3",
+    "socket.io": "^2.3.0",
+    "socket.io-client": "^2.3.0",
+    "vue-json-viewer": "^2.2.12",
+    "vue-socket.io": "^2.1.1-a",
+    "vue-template-compiler": "^2.6.10",
+    "vuescroll": "^4.16.1"
+  },
+  "lint-staged": {
+    "*.js": [
+      "vue-cli-service lint",
+      "git add"
+    ],
+    "*.vue": [
+      "vue-cli-service lint",
+      "git add"
+    ]
+  }
+}
