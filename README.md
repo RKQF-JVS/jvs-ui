@@ -20,9 +20,9 @@ JVS是“软开企服”推出的面向软件开发团队可以快速实现应�
 
 ## **项目构成**
 
-框架前端地址：https://gitee.com/software-minister/jvs-ui
+框架前端地址：https://github.com/RKQF-JVS/jvs-ui
 
-框架后端地址：https://gitee.com/software-minister/jvs
+框架后端地址：https://github.com/RKQF-JVS/jvs
 
 ## **体验地址**
 
