@@ -92,5 +92,5 @@ JVS是“软开企服”推出的面向软件开发团队可以快速实现应�
 
 个人微信号：ruanjbz
 
-![image](https://user-images.githubusercontent.com/94048608/182019081-b9b22a08-89b9-4ebe-815f-ccdc2e7dd691.png)
+![image](https://user-images.githubusercontent.com/94048608/183393589-12fb5422-b62d-439f-8b4a-0bff88e2a45b.png)
 
