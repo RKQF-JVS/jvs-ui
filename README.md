@@ -102,5 +102,6 @@ JVS是“软开企服”推出的面向软件开发团队可以快速实现应�
 
 个人微信号：ruanjbz
 
-<img width="83" alt="群二维码" src="https://github.com/RKQF-JVS/jvs-ui/assets/94048608/5b1c4e61-4787-4403-917d-fc50c6ccf5ed">
+![群二维码](https://github.com/RKQF-JVS/jvs-ui/assets/94048608/7be59210-e29d-487e-86db-f5f3b802a8d4)
+
 
