@@ -40,6 +40,7 @@ JVS是“软开企服”推出的面向软件开发团队可以快速实现应�
 - 企业计划（项目管理）：http://teamwork.bctools.cn/
 - 企业邮筒（Web邮箱客户端）：http://mailbox.bctools.cn/
 - 规则引擎：http://jvs-rules.bctools.cn/
+- 逻辑引擎：http://logic.bctools.cn/
 - 视频会议：http://meeting.bctools.cn/
 
 
@@ -102,7 +103,8 @@ JVS是“软开企服”推出的面向软件开发团队可以快速实现应�
 
 个人微信号：ruanjbz
 
-![群二维码](https://github.com/RKQF-JVS/jvs-ui/assets/94048608/e07838ad-db43-4207-a9e5-973fe8a61560)
+![群二维码](https://github.com/RKQF-JVS/jvs-ui/assets/94048608/01610313-0d94-4ccb-b1d4-995f601ed359)
+
 
 
 
