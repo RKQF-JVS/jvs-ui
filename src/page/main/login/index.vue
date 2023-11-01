@@ -23,7 +23,7 @@
         </div>
       </div>
     </div>
-    <img class="login-logo-picture" :src="logoV2Pic" alt="">
+    <img class="login-logo-picture" :src="logoV2Pic" alt="" v-if="false">
   </div>
 </template>
 <script>
@@ -50,7 +50,8 @@ export default {
       sysInfo: {},
       loadingImgSrc: loadingGifImg,
       loadingShow: false,
-      logoV2Pic: logoV2
+      logoV2Pic: logoV2,
+      loginQuery: '', // 第三方登录参数
     };
   },
   watch: {},
@@ -63,6 +64,7 @@ export default {
     }
     // 获取域名相关设置
     this.getDomainHandle()
+    this.loginQuery = JSON.stringify(localStorage.getItem('loginQuery')) || ''
   },
   mounted () { },
   computed: {
@@ -119,19 +121,31 @@ export default {
      */
     openLogin() {
       if(this.$route.path != '/wel/index') {
+        let tp = []
+        let qda = {}
+        let qsting = JSON.parse(this.loginQuery)
+        if(qsting && qsting.includes('?')) {
+          tp = qsting.split('?')[1].split('&')
+        }
+        for(let i in tp) {
+          let keyv = tp[i].split('=')
+          this.$set(qda, keyv[0], keyv[1])
+        }
         this.$openLogin({
           right: '150px',
           successClose: false,
-          queryData: this.$route.query ? this.$route.query : null,
+          queryData: qda ? qda : null,
           afterLogin: (dialog, res) => {
             console.log('登录提交。。。。。')
-            // 登录IM
-            try {
-              this.connect(res.code, dialog)
-            } catch (error) {
-              dialog.handleClose()
-              this.loginToPath()
-            }
+            dialog.handleClose()
+            this.loginToPath()
+            // // 登录IM
+            // try {
+            //   this.connect(res.code, dialog)
+            // } catch (error) {
+            //   dialog.handleClose()
+            //   this.loginToPath()
+            // }
           },
           afterRegister: () => {
             console.log('注册提交。。。。。')
@@ -145,7 +159,12 @@ export default {
       if(path) {
         this.$openUrl(path, '_self')
       }else{
-        this.$router.push({ path: (this.tagWel && this.tagWel.value) ? this.tagWel.value : '/wel/index' });
+        this.$router.push({
+            path: (this.tagWel && this.tagWel.value) ? this.tagWel.value : '/wel/index',
+            query: {
+              login: 'isLogin'
+            }
+        });
       }
     },
     // 获取域名对应设置信息

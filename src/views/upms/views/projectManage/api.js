@@ -4,7 +4,7 @@ let base = '/mgr/jvs-design/'
 // 分页查询
 export const pageList = (params) => {
   return request({
-    url: base + `/JvsApp/page`,
+    url: base + `/app/JvsApp/page`,
     method: 'get',
     params:  params
   })
@@ -13,7 +13,7 @@ export const pageList = (params) => {
 // 新增
 export const add = (data) => {
   return request({
-    url: base + `/JvsApp/save`,
+    url: base + `/app/save`,
     method: 'post',
     data:  data
   })
@@ -22,7 +22,7 @@ export const add = (data) => {
 // 编辑
 export const edit = (data) => {
   return request({
-    url: base + `/JvsApp/edit`,
+    url: base + `/app/${data.id}/edit`,
     method: 'put',
     data:  data
   })
@@ -31,24 +31,23 @@ export const edit = (data) => {
 // 删除
 export const del = (id) => {
   return request({
-    url: base + `/JvsApp/del/${id}`,
+    url: base + `/app/${id}/del`,
     method: 'delete',
   })
 }
 
 // 分页查询模板
-export const templateList = (params) => {
+export const templateList = () => {
   return request({
-    url: base + `/JvsApp/template`,
-    method: 'get',
-    params:  params
+    url: base + `JvsAppTemplate/list`,
+    method: 'get'
   })
 }
 
 // 发布
 export const publish = (id) => {
   return request({
-    url: base + `/JvsApp/deploy/${id}`,
+    url: base + `/app/${id}/deploy`,
     method: 'put',
   })
 }
@@ -56,7 +55,7 @@ export const publish = (id) => {
 // 发布到模板
 export const publishToTemplate = (data) => {
   return request({
-    url: base + `/JvsApp/deployTemplate`,
+    url: base + `/JvsAppTemplate/deploy`,
     method: 'post',
     data: data
   })
@@ -65,7 +64,7 @@ export const publishToTemplate = (data) => {
 // 卸载
 export const unload = (id) => {
   return request({
-    url: base + `/JvsApp/unload/${id}`,
+    url: base + `/app/${id}/unload`,
     method: 'put',
   })
 }

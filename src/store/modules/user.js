@@ -11,6 +11,7 @@ import { deepClone, encryption } from "@/util/util";
 import webiste from "@/const/website";
 import { GetMenu } from "@/api/admin/menu";
 import {enCodeKey} from "@/const/const"
+import eventBus from "@/util/vuebus";
 
 function addPath(ele, first) {
   const propsConfig = webiste.menu.props;
@@ -85,13 +86,16 @@ const user = {
         key: enCodeKey, // "ZnJhbWVmcmFtZQ==",
         param: ["password"]
       });
+      user.call_back_url = encodeURIComponent(decodeURIComponent(user.call_back_url))
       return new Promise((resolve, reject) => {
         if (user.loginType === "namepass") {
           loginByUsername(
             user.username,
             user.password,
             user.code,
-            user.randomStr
+            user.randomStr,
+            user.app_client_id,
+            user.call_back_url
           )
             .then(response => {
               const data = response.data;
@@ -107,7 +111,7 @@ const user = {
               resolve(data);
             })
             .catch(error => {
-              console.log(error);
+              // console.log(error);
               reject(error);
             });
         } else if (user.loginType === "phone") {
@@ -139,18 +143,28 @@ const user = {
               resolve(data);
             })
             .catch(error => {
-              console.log(error);
+              // console.log(error);
               reject(error);
             });
-        }else if(['invite', 'weixin'].indexOf(userInfo.loginType) > -1) {
+        }else if(['invite', 'weixin', 'DINGTALK_INSIDE', 'DINGTALK_SCAN', 'LDAP', 'OWN', 'STANDARD_OWN'].indexOf(userInfo.loginType) > -1) {
           let userTempData = JSON.parse(JSON.stringify(userInfo))
           let spiteIcon = 'invite@'
           if(userInfo.loginType == 'weixin') {
             spiteIcon = (userTempData.type + '@')
           }
+          if(['DINGTALK_INSIDE', 'DINGTALK_SCAN', 'LDAP', 'OWN', 'STANDARD_OWN'].indexOf(userInfo.loginType) > -1) {
+            spiteIcon = (userTempData.loginType + '@')
+          }
           delete userTempData.loginType
+          let queryData = {}
+          if(userInfo.app_client_id) {
+            queryData.app_client_id = userInfo.app_client_id
+          }
+          if(userInfo.call_back_url) {
+            queryData.call_back_url = userInfo.call_back_url
+          }
           let tp = {
-            data: JSON.stringify(userTempData)
+            data: JSON.stringify(Object.assign(userTempData, queryData))
           }
           let temp = encryption({
             data: tp,
@@ -170,7 +184,7 @@ const user = {
             resolve(data);
           })
           .catch(error => {
-            console.log(error);
+            // console.log(error);
             reject(error);
           });
         }else if(userInfo.loginType == 'register') {
@@ -194,7 +208,7 @@ const user = {
             resolve(data);
           })
           .catch(error => {
-            console.log(error);
+            // console.log(error);
             reject(error);
           });
         }
@@ -221,11 +235,15 @@ const user = {
         refreshToken(state.refresh_token, tenantId)
           .then(response => {
             const data = response.data;
-            commit("SET_ACCESS_TOKEN", data.access_token);
-            commit("SET_REFRESH_TOKEN", data.refresh_token);
-            commit("SET_EXPIRES_IN", data.expires_in);
-            commit("CLEAR_LOCK");
-            commit("SET_TENANTId", tenantId);
+            if(data && data.access_token) {
+              commit("SET_ACCESS_TOKEN", data.access_token);
+              commit("SET_REFRESH_TOKEN", data.refresh_token);
+              commit("SET_EXPIRES_IN", data.expires_in);
+              commit("CLEAR_LOCK");
+              commit("SET_TENANTId", tenantId);
+              commit("SET_USER_INFO", data.userDto);
+              eventBus.$emit('freshUserInfo', data.userDto)
+            }
             resolve(data);
           })
           .catch(error => {
@@ -247,8 +265,11 @@ const user = {
       commit("SET_SYSTEM", "");
       commit("SET_ACCESS_TOKEN", "");
       commit("SET_TENANTId", "");
+      commit("SET_MENU_TYPE", "");
+      commit("SET_APP_SETTING_OPEN", false);
       localStorage.removeItem('loginRandom')
       localStorage.removeItem('bindRandom')
+      localStorage.removeItem('hadRefresh')
     },
     // 注销session
     FedLogOut({ commit }) {
@@ -282,6 +303,7 @@ const user = {
   },
   mutations: {
     SET_ACCESS_TOKEN: (state, access_token) => {
+      localStorage.setItem('hadRefresh', '')
       state.access_token = access_token;
       setStore({
         name: "access_token",

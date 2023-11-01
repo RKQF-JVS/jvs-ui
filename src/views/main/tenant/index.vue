@@ -76,7 +76,7 @@ export default {
             this.$store.commit("SET_THEME_NAME", ""); // 清除主题
             this.$store.commit("SET_TENANTINFO", item)
             // 登录IM
-            this.connect(res.data.data.code)
+            // this.connect(res.data.data.code)
             if(this.needReload) {
               // 刷新页面
               this.$router.push({ path: '/' });
@@ -154,6 +154,9 @@ export default {
           display: flex;
           flex-wrap: wrap;
           padding: 0 10px;
+          height: calc(100% - 20px);
+          overflow: hidden;
+          overflow-y: auto;
           p{
             width: 22%;
             height: 120px;

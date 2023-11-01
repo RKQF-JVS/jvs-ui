@@ -50,7 +50,7 @@ export const getDetail=(params) => {
 // 分类字典列表
 export const getClassifyDict = (params) => {
   return request({
-    url: `/mgr/jvs-auth/tree/list`,
+    url: `/mgr/jvs-design/platform/app/tree/list`,
     method: "get",
     params: params
   });
@@ -100,17 +100,17 @@ export const getKeyValue= () => {
 }
 
 // 获取数据关联设置
-export const getModelSetting= (modelId) => {
+export const getModelSetting= (jvsAppId, modelId, designId) => {
   return request({
-    url: `/mgr/jvs-design/data/model/setting/${modelId}`,
+    url: `/mgr/jvs-design/app/${jvsAppId}/data/event/list/${modelId}/${designId}`,
     method: 'get'
   })
 }
 
 // 修改数据关联设置
-export const updateModelSetting= (data, modelId) => {
+export const updateModelSetting= (jvsAppId, data, modelId, designId) => {
   return request({
-    url: `/mgr/jvs-design/data/model/setting/${modelId}`,
+    url: `/mgr/jvs-design/app/${jvsAppId}/data/event/list/${modelId}/${designId}`,
     method: 'put',
     data: data
   })

@@ -12,6 +12,9 @@ export default {
     searchOption: {
       type: Object
     },
+    disabled: {
+      type: Boolean
+    },
     rowData: {
       type: Object
     },
@@ -20,8 +23,9 @@ export default {
     }
   },
   data(){
-    return {}
-    editor: null
+    return {
+      editor: null
+    }
   },
   methods: {
     // 初始化富文本
@@ -63,22 +67,29 @@ export default {
           }else{
             _this.rowData.content = newHtml
           }
-        } 
+        }
       }
       _this.editor.config.onchange = function (newHtml) {
         if(_this.rowData && _this.rowData.sendType != 'sms') {
           if(!newHtml || JSON.stringify(newHtml) == '" "' || newHtml == '<p></p>' && newHtml == '<p><br></p>') {
             _this.rowData.content = ""
+            _this.$emit('setContent', "")
           }else{
             _this.rowData.content = newHtml
+            _this.$emit('setContent', newHtml)
           }
-        } 
+        }
       }
       _this.editor.create()
       if(_this.rowData && _this.rowData.sendType != 'sms' && _this.rowData.content) {
         _this.editor.txt.html(_this.rowData.content)
       }
-      if(this.searchOption.disabled) {
+      // if(this.searchOption.disabled) {
+      //   _this.editor.disable()
+      // }else{
+      //   _this.editor.enable()
+      // }
+      if(this.disabled) {
         _this.editor.disable()
       }else{
         _this.editor.enable()

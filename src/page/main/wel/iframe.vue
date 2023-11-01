@@ -67,10 +67,10 @@ export default {
           str = item.page.slice(0, index+3) + '/#' + item.page.slice(index+3)
         }else{
           if(['page'].indexOf(item.type) > -1) {
-            str = `/page-design-ui/#/show?id=${item.page}`
+            str = `/page-design-ui/#/show?id=${item.page}&jvsAppId=${item.jvsAppId}`
           }
           if(item.type == 'chart') {
-            str = `/chart-design-ui/#/show?model=view&type=pc&code=${item.page}`
+            str = `/chart-design-ui/#/show?model=view&type=pc&code=${item.page}&jvsAppId=${item.jvsAppId}`
           }
         }
       }

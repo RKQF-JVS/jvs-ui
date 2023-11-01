@@ -1,13 +1,13 @@
 export const tableOption = {
   page: true,
-  align: 'center',
-  menuAlign: 'center',
+  // align: 'center',
+  // menuAlign: 'center',
   viewBtn: false,
   addBtn: false,
   editBtn: false,
   delBtn: false,
   selection: false,
-  search: false,
+  search: true,
   inline: true,
   showOverflow: true,
   isSearch: true,
@@ -29,6 +29,7 @@ export const tableOption = {
       label: '手机号',
       prop: 'phone',
       span: 6,
+      search: true,
       rules: [
         { required: true, message: '请输入真名', trigger: 'blur' }
       ]
@@ -77,4 +78,4 @@ export const userpostOption = {
       }
     }
   ]
-} 
+}

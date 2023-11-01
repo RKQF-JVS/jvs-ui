@@ -11,6 +11,7 @@
       :option="option"
       :page="page"
       :defalutFormData="queryParams"
+      @search-change="searchChange"
       @on-load="getList"
     >
       <template slot="menuLeft">
@@ -22,7 +23,7 @@
     </jvs-table>
     <div class="role-tree">
       <div class="el-tree">
-        <div :class="{'el-tree-node ': true, 'is-current': !roleId}">
+        <!-- <div :class="{'el-tree-node ': true, 'is-current': !roleId}">
           <div class="el-tree-node__content" @click="roleHandleClick(null)" style="padding-left: 24px;">
             <span class="customize-tree-node">
               <span>
@@ -31,7 +32,7 @@
               </span>
             </span>
           </div>
-        </div>
+        </div> -->
         <div v-for="data in roleLsit" :key="'role-item-'+data.id" :class="{'el-tree-node ': true, 'is-current': (roleId == data.id)}">
           <div class="el-tree-node__content" @click="roleHandleClick(data)">
             <span class="is-leaf el-tree-node__expand-icon el-icon-caret-right"></span>
@@ -54,14 +55,14 @@
                     <li v-if="$permissionMatch('upms_role_edit')" @click.stop="editRole(data)">
                       <span>修改角色</span>
                     </li>
-                    <li v-if="$permissionMatch('upms_role_delete')" @click.stop="() => delRow(data)">
-                      <span>删除角色</span>
-                    </li>
                     <li v-if="$permissionMatch('upms_role_addUser')" @click.stop="addUser(data)">
                       <span>添加人员</span>
                     </li>
                     <li v-if="$permissionMatch('upms_role_permision_data')" @click.stop="addDataAuthority(data)">
                       <span>数据权限</span>
+                    </li>
+                    <li v-if="$permissionMatch('upms_role_delete') && !data.autoGrant" @click.stop="() => delRow(data)">
+                      <span style="color: #F56C6C;">删除角色</span>
                     </li>
                   </ul>
                   <i slot="reference" class="el-icon-more iconhover" @click.stop="moreRole(data)"></i>
@@ -88,7 +89,14 @@
       @activeHandle="activeHandle"
     />
     <data-authority :dataAuthVisible="dataAuthVisible" :authList="authList" :isBindList="isBindList" :roleData="roleData" @dataAuthClose="dataAuthClose"/>
-    <userSelector ref="userSelector" :selectable="true" @submit="addCheckUSer"></userSelector>
+    <userSelector
+      ref="userSelector"
+      :userEnable="true"
+      :currentActiveName="'user'"
+      :selectable="true"
+      :dialogTitle="'人员选择'"
+      @submit="addCheckUSer"
+    />
   </div>
 </template>
 
@@ -174,12 +182,12 @@ export default {
     async addDataAuthority(data) {
       this.roleData = JSON.parse(JSON.stringify(data))
       await getRoleDataAuth(this.roleData.id).then(res => {
-        if (res.data && res.data.code == 0) {
+        if (res.data && res.data.code == 0 && res.data.data) {
           this.isBindList = [...res.data.data]
         }
       })
       await getAllDataAuth().then(res => {
-        if (res.data && res.data.code == 0) {
+        if (res.data && res.data.code == 0 && res.data.data) {
           const arr = [...res.data.data]
           arr.forEach(aItem => {
             if(aItem.value) {
@@ -217,6 +225,10 @@ export default {
     dataAuthClose() {
       this.dataAuthVisible = false
     },
+    searchChange (form) {
+      this.queryParams = form
+      this.getList()
+    },
     getList (page) {
       this.tableLoading=true
       let obj = {
@@ -231,17 +243,21 @@ export default {
           this.page.total = data.data.total
           this.page.currentPage = data.data.current
         }
+      }).catch(err => {
+        this.tableLoading=false
       })
     },
     roleHandleClick (data, node, dom) {
       this.page.currentPage = 1
       if(data) {
         if(this.roleId == data.id) {
-          this.roleId = ""
-          this.$forceUpdate()
+          // this.roleId = ""
+          // this.$forceUpdate()
         }else{
           this.roleId = data.id
         }
+      } else {
+        this.roleId = undefined
       }
       this.getList()
     },
@@ -280,12 +296,12 @@ export default {
       this.rowData=row
       this.title='权限分配'
       getMenuAuth(row.id).then(res => {
-        if (res.data && res.data.code == 0) {
+        if (res.data && res.data.code == 0 && res.data.data) {
           this.menuAuthList = [...res.data.data]
         }
       })
       getAllMenu().then(res => {
-        if (res.data && res.data.code==0) {
+        if (res.data && res.data.code==0 && res.data.data) {
           this.applicationList = [...res.data.data]
           this.funOption = this.applicationList[0].children
           this.funOption.forEach(item => {
@@ -371,9 +387,11 @@ export default {
     display: flex;
     align-items: center;
     margin: 0;
-    margin-bottom: 10px;
+    height: 32px;
+    line-height: 32px;
+    //margin-bottom: 10px;
     cursor: pointer;
-    padding: 5px 10px;
+    padding: 6px 24px;
     i{
       margin-right: 10px;
       font-size: 14px!important;
@@ -416,7 +434,7 @@ export default {
 }
 </style>
 <style lang="scss">
-.transverseTreeDialog {
+.menuAuthorityDialog {
   .el-dialog.is-fullscreen {
     scrollbar-width: none; /* firefox */
     -ms-overflow-style: none; /* IE 10+ */
@@ -430,7 +448,7 @@ export default {
   }
   .el-dialog__body{
     padding: 0;
-    background: #f0f2f5;
+    background: #ffffff;
     height: 100%;
     box-sizing: border-box;
     overflow: hidden;
@@ -452,7 +470,7 @@ export default {
     width: 8px;
   }
 }
-.transverseTreeDialog{
+.menuAuthorityDialog{
   .transverse-tree-node {
     .el-tree-node{
       width: 100%;
@@ -478,15 +496,15 @@ export default {
   .role-tree {
     position: absolute;
     //top: 94px;
-    top: 72px;
+    top: 0;
     left: 0;
     width: 250px;
     //height: calc(100% - 94px);
-    height: calc(100% - 72px);
+    height: calc(100% - 10px);
     overflow: hidden;
     overflow-y: auto;
     padding-left: 20px;
-    border-right: 1px solid #DCDFE6;
+    //border-right: 1px solid #DCDFE6;
     padding-top: 20px;
     padding-bottom: 20px;
     box-sizing: border-box;
@@ -529,6 +547,10 @@ export default {
   }
   .role-tree::-webkit-scrollbar{
     display: none;
+  }
+  .jvs-table-titleTop{
+    width: calc(100% - 250px);
+    margin-left: 250px;
   }
   .el-table{
     width: calc(100% - 250px);

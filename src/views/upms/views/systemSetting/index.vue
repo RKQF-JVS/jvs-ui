@@ -6,6 +6,7 @@
       class="form-fullscreen-dialog system-setting-no-header-dialog"
       fullscreen
       :close-on-press-escape="false"
+      :close-on-click-modal="false"
     >
       <tenantForm v-if="show" submitType="edit" :rowData="form" permisionFlag="upms_systemSetting_save"></tenantForm>
     </el-dialog>

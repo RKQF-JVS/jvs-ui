@@ -136,9 +136,11 @@ export default {
     display: flex;
     align-items: center;
     margin: 0;
-    margin-bottom: 10px;
+    //margin-bottom: 10px;
+    height: 32px;
+    line-height: 32px;
     cursor: pointer;
-    padding: 5px 10px;
+    padding: 6px 24px;
     i{
       margin-right: 10px;
       font-size: 14px!important;

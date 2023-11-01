@@ -1,6 +1,14 @@
 import request from '@/router/axios'
 let base = '/mgr/jvs-auth/'
 
+// 获取终端列表
+export const getAppList = () => {
+  return request({
+    url: base + `/apply/all`,
+    method: 'get',
+  })
+}
+
 // 分页查询
 export const pageList = (params) => {
   return request({
@@ -52,5 +60,13 @@ export const unload = (data) => {
     url: base + `/bulletin/unload/${data}`,
     method: 'put',
     // data:  data
+  })
+}
+
+// 卸载
+export const getDetail = (id) => {
+  return request({
+    url: base + `/bulletin/${id}`,
+    method: 'get',
   })
 }

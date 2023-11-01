@@ -1,6 +1,7 @@
 <template>
   <div class="dictionaries-manage">
     <jvs-table
+      ref="dictionariesListTable"
       :option="tableOption"
       :loading="tableLoading"
       :data="tableData"
@@ -15,11 +16,15 @@
       <template slot="menu" slot-scope="scope">
         <jvs-button size="mini" type="text" permisionFlag="upms_dict_items_page" @click="setHandle(scope.row)">字典项</jvs-button>
       </template>
+      <template slot="createBy" slot-scope="scope">
+        <el-tag v-if="scope.row.createBy" size="mini">{{ scope.row.createBy }}</el-tag>
+      </template>
     </jvs-table>
     <el-dialog
       :title="rowData.type"
       fullscreen
       :visible.sync="dialogVisible"
+      :close-on-click-modal="false"
       :before-close="handleClose">
       <jvs-button size="mini" type="primary" permisionFlag="upms_dict_items_save" @click="addOne" style="margin-bottom:10px;">添加</jvs-button>
       <tableForm :item="{editable: true, delBtn: true}" :option="sysDicOption" :data="sysDictItem" @setTable="setTableHandle">
@@ -52,8 +57,8 @@ export default {
       rowData: {}, // 行数据
       tableData: [],
       tableOption: {
-        align: 'center',
-        menuAlign: 'center',
+        // align: 'center',
+        // menuAlign: 'center',
         showOverflow: true,
         search: true,
         addBtn: this.$permissionMatch("upms_dict_add"),
@@ -113,6 +118,7 @@ export default {
           },
            {
             label: '创建人',
+            slot: true,
             prop: 'createBy',
             addDisplay: false,
             editDisplay: false
@@ -126,8 +132,8 @@ export default {
         editBtn: false,
         viewBtn: false,
         delBtn: false,
-        align: 'center',
-        menuAlign: 'center',
+        // align: 'center',
+        // menuAlign: 'center',
         size: 'mini',
         column: [
           {
@@ -207,7 +213,7 @@ export default {
       this.rowData = row
       getDicItem(row.id).then(res => {
         if(res.data.code == 0) {
-          this.sysDictItem = res.data.data
+          this.sysDictItem = res.data.data || []
           if(this.sysDictItem.length == 0) {
             this.sysDictItem.push({})
           }
@@ -217,6 +223,7 @@ export default {
     },
     handleClose () {
       this.dialogVisible = false
+      this.$refs.dictionariesListTable.styleHeight()
     },
     addOne () {
       this.sysDictItem.push({})

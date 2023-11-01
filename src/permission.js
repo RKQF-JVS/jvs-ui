@@ -29,8 +29,15 @@ router.beforeEach((to, from, next) => {
     }
   }
   const meta = to.meta || {}
-  routerAddTags(to,meta,next,from)
-
+  // 第三方跳转登录不做拦截
+  if(to.path == '/login' && to.query && to.query.app_client_id && to.query.call_back_url) {
+    let url = ""
+    url = to.fullPath
+    localStorage.setItem('loginQuery', url)
+    next('/login')
+  }else{
+    routerAddTags(to,meta,next,from)
+  }
   //todo 先跳过登录
   // next()
 
@@ -44,12 +51,19 @@ router.afterEach(() => {
 
 
 function routerAddTags(to, meta, next, from) {
-  if (getStore({name: 'access_token', type: 'session'}) && store.getters.tenantId) { // store.getters.access_token && store.getters.tenantId
+  if (getStore({name: 'access_token'}) && store.getters.tenantId) { // store.getters.access_token && store.getters.tenantId
     if (to.path === '/login') {
       if(to.query && to.query.source && to.query.uuid) {
         next('/info/index?act=userManager')
       }else{
-        next({path: '/'})
+        let url = localStorage.getItem('loginQuery')
+        if(url) {
+          localStorage.clear()
+          localStorage.setItem('loginQuery', url)
+          next('/login')
+        }else{
+          next({path: '/'})
+        }
       }
     } else {
       const value = to.query.src || to.fullPath

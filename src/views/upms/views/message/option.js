@@ -1,7 +1,7 @@
 export const tableOption={
   page: true,
-  align: 'center',
-  menuAlign: 'center',
+  // align: 'center',
+  // menuAlign: 'center',
   viewBtn: false,
   addBtn: false,
   editBtn: false,
@@ -51,25 +51,28 @@ export const tableOption={
         {label: '邮箱', value: 'email'},
         {label: '短信', value: 'sms'},
         {label: '站内信', value: 'interior'},
+        {label: '公众号', value: 'WECHAT_MP_MESSAGE'},
+        {label: '企业微信', value: 'WX_ENTERPRISE'},
+        {label: '钉钉', value: 'DING_H5'},
       ],
       search: true,
       clearable: true
     },
-    {
-      label: '消息类型',
-      prop: 'sendMessageType',
-      type: 'select',
-      dicData: [
-        {label: '广播消息', value: 'broadcast'},
-        {label: '警告消息', value: 'warning'},
-        {label: '通知消息', value: 'notification'},
-        {label: '系统消息', value: 'system'},
-        {label: '业务消息', value: 'business'}
-      ],
-      search: true,
-      clearable: true,
-      slot: true
-    }
+    // {
+    //   label: '消息类型',
+    //   prop: 'sendMessageType',
+    //   type: 'select',
+    //   dicData: [
+    //     {label: '广播消息', value: 'broadcast'},
+    //     {label: '警告消息', value: 'warning'},
+    //     {label: '通知消息', value: 'notification'},
+    //     {label: '系统消息', value: 'system'},
+    //     {label: '业务消息', value: 'business'}
+    //   ],
+    //   search: true,
+    //   clearable: true,
+    //   slot: true
+    // }
   ]
 }
 

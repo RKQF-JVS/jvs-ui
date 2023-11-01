@@ -1,52 +1,67 @@
 <template>
-  <div class="message-center" style="width: clac(100% - 20px);padding: 10px;">
-    <title-page-header title="消息中心" :hassave="false" @close="backToLast">
-      <template slot="left">
-        <div style="display: flex;align-items: center;">
-          <el-input v-model="queryParams.search" size="mini" placeholder="消息搜索" clearable style="margin-right:10px;width:400px;"></el-input>
-          <el-button type="primary" size="mini" @click="searchChange">搜索</el-button>
-        </div>
-      </template>
-    </title-page-header>
+  <div class="message-center">
     <div class="message-center-box">
-      <jvs-table
-        refs="multipleTable"
-        pageheadertitle="消息中心"
-        :data="tableData"
-        tooltipEffect="dark"
-        style="width: 100%"
-        :showHeader="false"
-        :loading="tableLoading"
-        :option="option"
-        :page="page"
-        :size="$store.getters.theme.table.size || 'mini'"
-        @row-click="viewHandle"
-        @on-load="getList"
-      >
-        <template slot="title" slot-scope="scope">
-          <!-- {{scope.row.readStatus ? '' : '[未读]'}}   -->
-          <!-- [{{scope.row.sendMessageType | getlabelbyvalue(scope.row.sendMessageType)}}] -->
-          <!-- [{{scope.row.source}}]  -->
-          <span>{{scope.row.title}}</span>
-        </template>
-        <template slot="createTime" slot-scope="scope">
-          <div>
-            <span>{{scope.row.createTime}}</span>
-            <!-- <el-button type="text" size="mini" style="margin-left: 20px;" @click.stop="hideMessage(scope.row)">隐藏</el-button> -->
+      <title-page-header title="消息中心" :hassave="false" @close="backToLast">
+        <template slot="left">
+          <div style="display: flex;align-items: center;">
+            <el-input v-model="queryParams.search" size="mini" placeholder="消息搜索" clearable style="margin-right:10px;width:400px;"></el-input>
+            <el-button type="primary" size="mini" @click="searchChange">搜索</el-button>
           </div>
         </template>
-        <template slot="readStatus" slot-scope="scope">
-          <span>{{scope.row.readStatus ? '已读' : '未读'}}</span>
-        </template>
-        <template slot="sendMessageType" slot-scope="scope">
-          <span>{{scope.row.sendMessageType | getlabelbyvalue(scope.row.sendMessageType)}}</span>
-        </template>
-      </jvs-table>
+      </title-page-header>
+      <div class="message-center-content">
+        <div class="left-part">
+          <div
+            :class="item.value === currentType ? 'left-part-item is-active' : 'left-part-item'"
+            v-for="(item, key) in typeList"
+            :key="key"
+            @click="handleType(item.value)"
+          >{{ item.label }}</div>
+        </div>
+        <div class="right-part">
+          <jvs-table
+            refs="multipleTable"
+            pageheadertitle="消息中心"
+            :data="tableData"
+            tooltipEffect="dark"
+            :showHeader="false"
+            :loading="tableLoading"
+            :option="option"
+            :page="page"
+            :size="$store.getters.theme.table.size || 'mini'"
+            @row-click="viewHandle"
+            @on-load="getList"
+          >
+            <template slot="title" slot-scope="scope">
+              <!-- {{scope.row.readStatus ? '' : '[未读]'}}   -->
+              <!-- [{{scope.row.type | getlabelbyvalue(scope.row.type)}}] -->
+              <!-- [{{scope.row.source}}]  -->
+              <div style="display: flex;align-items: center">
+                <div style="width: 40px">
+                  <div v-if="!scope.row.readStatus" style="width: 10px;height: 10px;border-radius: 5px;background-color: #de4942"></div>
+                </div>
+                <span>{{scope.row.title}}</span>
+              </div>
+            </template>
+            <template slot="createTime" slot-scope="scope">
+              <div>
+                <span>{{scope.row.createTime}}</span>
+                <!-- <el-button type="text" size="mini" style="margin-left: 20px;" @click.stop="hideMessage(scope.row)">隐藏</el-button> -->
+              </div>
+            </template>
+            <template slot="readStatus" slot-scope="scope">
+              <span>{{scope.row.readStatus ? '已读' : '未读'}}</span>
+            </template>
+            <template slot="type" slot-scope="scope">
+              <span>{{scope.row.type | getlabelbyvalue(scope.row.type)}}</span>
+            </template>
+          </jvs-table>
+        </div>
+      </div>
     </div>
 
     <el-dialog
       title="消息详情"
-      v-if="dialogVisible"
       :visible.sync="dialogVisible"
       width="80%"
       :before-close="handleClose"
@@ -60,7 +75,7 @@
         <el-row
           style="display:flex;justify-content: center;height: 42px;align-items: center;padding: 0 4px;text-align: center;"
         >
-          <span style="margin-right: 10px;">[{{rowData.sendMessageType | getlabelbyvalue(rowData.sendMessageType)}}]</span>
+          <span style="margin-right: 10px;">[{{rowData.type | getlabelbyvalue(rowData.type)}}]</span>
           <span style="margin-right: 10px;">[{{rowData.source}}]</span>
           <span style="margin-right: 10px;">{{rowData.createTime}}</span>
         </el-row>
@@ -102,8 +117,17 @@ export default {
   name: "message-center",
   data () {
     return {
+      currentType: null,
+      typeList: [
+        {label: '广播消息', value: 'broadcast'},
+        {label: '警告消息', value: 'warning'},
+        {label: '通知消息', value: 'notification'},
+        {label: '系统消息', value: 'system'},
+        {label: '业务消息', value: 'business'}
+      ],
       queryParams: {
-        search: ''
+        search: '',
+        type: ''
       },
       tableData: [],
       tableLoading: false,
@@ -116,8 +140,8 @@ export default {
       },
       option: {
         page: true,
-        align: 'center',
-        menuAlign: 'center',
+        // align: 'center',
+        // menuAlign: 'center',
         viewBtn: false,
         addBtn: false,
         editBtn: false,
@@ -144,7 +168,7 @@ export default {
             label: '状态',
             prop: 'readStatus',
             span: 24,
-            // hide: false,
+            hide: true,
             slot: true,
             dicData: [
               { label: '未读', value: false },
@@ -153,7 +177,7 @@ export default {
           },
           {
             label: '消息类型',
-            prop: 'sendMessageType',
+            prop: 'type',
             dicData: [
               {label: '广播消息', value: 'broadcast'},
               {label: '警告消息', value: 'warning'},
@@ -161,7 +185,7 @@ export default {
               {label: '系统消息', value: 'system',},
               {label: '业务消息', value: 'business'}
             ],
-            // hide: true,
+            hide: true,
             slot: true
           },
           {
@@ -214,6 +238,11 @@ export default {
   },
   computed: {},
   methods: {
+    handleType(item) {
+      this.currentType = item
+      this.queryParams.type = item
+      this.getList()
+    },
     //   获取数据
     getList (page) {
       this.tableLoading=true
@@ -223,6 +252,9 @@ export default {
       }
       if(this.queryParams.search) {
         obj.search = this.queryParams.search
+      }
+      if(this.queryParams.type) {
+        obj.type = this.queryParams.type
       }
       messageaPage(obj).then(res => {
         if (res.data.code==0) {
@@ -288,112 +320,49 @@ export default {
   }
 };
 </script>
-
 <style lang="scss" scoped>
-.mess-info{
-  .el-row{
-    line-height: 32px;
-    background: #F4F5F9;
-    padding: 10px 20px;
-    b{
-      font-weight: normal;
-      font-size: 14px;
-      color: #1A1A1C;
-    }
-    span{
-      color: #828283;
-      font-size: 14px;
-    }
-  }
-  .title{
-    b,span{
-      font-size: 16px;
-    }
-  }
-  .content{
-    background: #fff;
-    padding: 20px;
-  }
-}
-.dialog-cont{
-  max-height: 600px;
-  min-height: 400px;
-  overflow: auto;
-  overflow-x: hidden;
-}
-.search-title{
-  width: 100%;
-  // padding: 20px 0;
-  div{
-    width: 50%;
-    .el-button {
-      margin-left: 10px;
-    }
-  }
-  display: flex;
-  // justify-content: center;
-  align-items: center;
-}
-</style>
-<style lang="scss">
 .message-center{
   background-color: #f0f2f5;
   height: 100%;
-  box-sizing: border-box;
   overflow: hidden;
-  padding: 8px 10px;
   .message-center-box{
-    position: relative;
-    height: calc(100% - 55px);
-    overflow: hidden;
-    margin-top: 10px;
-  }
-  .message-center-box::-webkit-scrollbar{
-    display: none;
-  }
-  .table-top-left{
-    width: 100%;
-  }
-  .close-message-icon{
-    position: absolute;
-    right: 20px;
-    top: 20px;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  .jvs-table{
-    height: 100%;
-    overflow: hidden;
-    .el-card__body{
-      display: none;
-    }
-    .table-body-box{
-      height: calc(100% - 72px);
-      overflow: hidden;
-      .el-table{
-        height: 100%;
+    background-color: #ffffff;
+    padding: 20px;
+    width: 80vw;
+    margin: 20px auto;
+    .message-center-content{
+      display: flex;
+      .left-part{
+        margin-top: 40px;
+        margin-right: 40px;
+        border-right: 1px solid #f9f9f9;
+        width: 240px;
+        .left-part-item{
+          color: #333333;
+          padding: 6px 16px;
+          height: 28px;
+          line-height: 28px;
+          font-size: 16px;
+          cursor: pointer;
+          &:hover{
+            background-color: #f9f9f9;
+          }
+        }
+        .is-active{
+          background-color: #f9f9f9;
+        }
+      }
+      /deep/.right-part{
+        width: calc(100% - 280px);
+        .el-table .el-table__body-wrapper{
+          height: 60vh!important;
+        }
+        .jvs-table .jvs-table-titleTop .el-card__body .table-top{
+          border-bottom: 0;
+          padding: 0;
+        }
       }
     }
-    .el-table__body-wrapper{
-      height: 100%;
-    }
-    .el-table__body-wrapper::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-    .el-table__body-wrapper::-webkit-scrollbar-thumb {
-      border-radius: 10px;
-      -webkit-box-shadow: inset 0 0 5px #dcdfe6, 0.2;
-      background: rgba(0,0,0,0.1);
-    }
-    .el-table__body-wrapper::-webkit-scrollbar-track {
-      -webkit-box-shadow: inset 0 0 5px #dcdfe6, 0.2;
-      border-radius: 0;
-      background: rgba(0,0,0,0.1);
-    }
-  }
-  .title-page-header{
-    margin-top: 0;
   }
 }
 </style>

@@ -15,7 +15,7 @@
       <template slot="menu" slot-scope="scope">
         <div>
 <!--          <jvs-button type="text" size="mini" v-if="['png', 'jpg', 'jpeg', 'pdf'].indexOf(scope.row.fileType) > -1" @click="viewItem(scope.row, 'preview')">预览</jvs-button>-->
-          <jvs-button type="text" size="mini" @click="viewItem(scope.row, 'preview')">预览</jvs-button>
+          <jvs-button v-if="false" type="text" size="mini" @click="viewItem(scope.row, 'preview')">预览</jvs-button>
 <!--          <jvs-button type="text" size="mini" @click="viewItem(scope.row, 'download')">下载</jvs-button>-->
           <jvs-button type="text" size="mini" @click="viewItem(scope.row, 'copy')">复制链接</jvs-button>
         </div>
@@ -29,6 +29,7 @@
       v-if="dialogVisible"
       :visible.sync="dialogVisible"
       append-to-body
+      :close-on-click-modal="false"
       :before-close="handleClose">
       <jvs-form ref="ruleForm" :option="uploadOption" :formData="uploadForm" @formChange="formChange" @submit="handleSubmit"></jvs-form>
       <el-upload

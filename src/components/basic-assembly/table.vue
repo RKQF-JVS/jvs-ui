@@ -1,5 +1,5 @@
 <template>
-  <div class="jvs-table">
+  <div :class="{'jvs-table': true, 'jvs-table-nocolumn': (!option.column || option.column.length == 0)}">
     <PageHeader :title="pageheadertitle" :class="{'jvs-table-titleTop': true, 'jvs-table-top': !option.search == false, 'jvs-table-hideTop': option.hideTop, 'jvs-table-notitle': !pageheadertitle}">
       <!-- <div style="height:20px" v-if="pageheadertitle"></div> -->
       <slot name="headerTop"></slot>
@@ -16,10 +16,10 @@
       </div>
     </PageHeader>
     <h4 class="table-title">{{option.title}}</h4>
-    <div class="table-body-box">
+    <div :class="'table-body-box '+tableKey">
       <el-table
         header-row-class-name='headerclass'
-        :stripe="true"
+        :stripe="false"
         :ref="refs"
         :data="data"
         :tooltip-effect="tooltipEffect"
@@ -51,6 +51,7 @@
         >
           <!-- 表头文字说明 -->
           <template slot="header" slot-scope="scope">
+            <span v-if="editable && item.rules && item.rules.length > 0 && item.rules[0].required" style="color:#f56c6c;">*</span>
             <span>{{item.label}}</span>
             <el-tooltip v-if="item.headerExplain" effect="light" :content="item.explainContent" placement="top">
               <i class="el-icon-info info-icon"/>
@@ -61,20 +62,37 @@
               <!-- 自定义 -->
               <slot v-if="item.slot && !item.expand" :name="item.prop" :row="scope.row" :index="scope.$index"></slot>
               <!-- 动态控制 -->
-              <span v-if="!item.slot && !item.expand && item.expressControl && item.expressControl.length > 0" :style="'color:'+ styleRowItem(scope.row, item, 'color')+';'">{{styleRowItem(scope.row, item, 'text')}}</span>
-              <span v-if="!item.slot && !item.expand && (!item.expressControl || item.expressControl.length == 0)">
+              <span v-if="!item.slot && !item.expand && ( (item.expressControl && item.expressControl.length > 0) || (item.conditionControl && item.conditionControl.length > 0) )"
+                :style="'padding: 2px 10px;border-radius: 5px;'+ (styleRowItem(scope.row, item, 'color') ? ('color:' + styleRowItem(scope.row, item, 'color') + ';') : '')
+                + (styleRowItem(scope.row, item, 'bgcolor') ? ('background-color:' + styleRowItem(scope.row, item, 'bgcolor') + ';') : '') +';'">{{styleRowItem(scope.row, item, 'text')}}</span>
+              <span v-if="!item.slot && !item.expand && (!item.expressControl || item.expressControl.length == 0) && (!item.conditionControl || item.conditionControl.length == 0)">
                 <!-- 一般列 -->
-                <span v-if="!item.color && !item.dicData && (['datetime', 'link', 'image'].indexOf(item.type) == -1)" :style="'color:'+item.color+';'">{{scope.row[item.prop]}}</span>
+                <span v-if="!item.color && !item.dicData && (['datetime', 'link', 'image', 'file'].indexOf(item.type) == -1)" :style="'color:'+item.color+';'">{{scope.row[item.prop+'_1'] ? scope.row[item.prop+'_1'] : scope.row[item.prop]}}</span>
                 <!-- 特殊颜色 -->
-                <span v-if="item.color && !item.dicData && (['datetime', 'link', 'image'].indexOf(item.type) == -1)" :style="'color:'+item.color+';'">{{scope.row[item.prop]}}</span>
+                <span v-if="item.color && !item.dicData && (['datetime', 'link', 'image', 'file'].indexOf(item.type) == -1) && ( (item.expressControl && item.expressControl.length > 0) || (item.conditionControl && item.conditionControl.length > 0) )" :style="'color:'+item.color+';'">{{scope.row[item.prop]}}</span>
                 <!-- 日期时间 -->
                 <span v-if="item.type == 'datetime'" :style="item.color ? ('color:'+item.color): ''">{{scope.row[item.prop] | dateFormat(item.format)}}</span>
                 <!-- 字典 -->
-                <span v-if="(['datetime', 'link', 'image'].indexOf(item.type) == -1) && item.dicData" :style="item.color ? ('color:'+item.color): ''">{{scope.row[item.prop] | dicFormat(item.dicData, item.props)}}</span>
+                <span v-if="(['datetime', 'link', 'image', 'file'].indexOf(item.type) == -1) && item.dicData" :style="item.color ? ('color:'+item.color): ''">{{scope.row[item.prop] | dicFormat(item.dicData, item.props)}}</span>
                 <!-- 链接 -->
                 <a :href="scope.row[item.prop]" :target="item.openType || '_blank'" v-if="item.type == 'link'" :style="item.color ? ('color:'+item.color): ''">{{item.text}}</a>
                 <!-- 图片 -->
-                <img v-if="item.type == 'image'" :src="scope.row[item.prop]" :style="item.width ? ('width:' + item.width + 'px;') : '' + item.height ? ('height:' + item.height + 'px;') : ''" />
+                <img v-if="item.type == 'image' && (typeof scope.row[item.prop] == 'string' || (scope.row[item.prop] && scope.row[item.prop].length == 1))" :src="typeof scope.row[item.prop] == 'string' ? scope.row[item.prop] :  ( (scope.row[item.prop] && scope.row[item.prop].length > 0) ? scope.row[item.prop][0].url : '' )" :style="(item.imgWidth ? ('width:' + item.imgWidth + 'px;') : '') + (item.imgHeight ? ('height:' + item.imgHeight + 'px;') : '')" />
+                <!-- 文件 -->
+                <a v-if="['file'].indexOf(item.type) > -1  && (typeof scope.row[item.prop] == 'string' || (scope.row[item.prop] && scope.row[item.prop].length == 1))" :href="typeof scope.row[item.prop] == 'string' ? scope.row[item.prop] :  ( (scope.row[item.prop] && scope.row[item.prop].length > 0) ? scope.row[item.prop][0].url : '')" :target="'_blank'">{{typeof scope.row[item.prop] == 'string' ? '文件' :  ( (scope.row[item.prop] && scope.row[item.prop].length > 0) ? scope.row[item.prop][0].name : '')}}</a>
+                <el-popover
+                  v-if="['image', 'file'].indexOf(item.type) > -1 && (scope.row[item.prop] && scope.row[item.prop] instanceof Array && scope.row[item.prop].length > 1)"
+                  placement="bottom"
+                  trigger="click">
+                  <div class="img-file-list">
+                    <div v-for="(ifit, ifix) in scope.row[item.prop]" :key="item.type+'-item-'+ifix" class="if-item">
+                      <img v-if="item.type == 'image'" :src="ifit.url" :alt="ifit.name">
+                      <span>{{ifit.name}}</span>
+                      <i class="el-icon-download" @click="$openUrl(ifit.url, '_blank')"></i>
+                    </div>
+                  </div>
+                  <el-button type="text" slot="reference">共{{scope.row[item.prop].length + (item.type == 'image' ? '张图片' : '个文件')}}</el-button>
+                </el-popover>
               </span>
             </span>
           </template>
@@ -83,11 +101,11 @@
         <el-table-column :fixed="option.menuFix" label="操作" :width="option.menuWidth" v-if="option.menu!==false" :align="option.menuAlign">
           <template slot-scope="scope">
             <div>
-              <el-button type="text" :size="$store.state.params.btn.size || 'mini'" v-if="!(option.viewBtn==false)" @click="viewHandle(scope.row)">{{option.viewBtnText || '查看'}}</el-button>
-              <el-button type="text" :size="$store.state.params.btn.size || 'mini'" v-if="!(option.editBtn==false)" @click="editHandle(scope.row)">{{option.editBtnText || '编辑'}}</el-button>
+              <el-button type="text" :size="$store.state.params.btn.size || 'mini'" v-if="!(option.viewBtn==false)" @click="viewHandle(scope.row,scope.$index)">{{option.viewBtnText || '查看'}}</el-button>
+              <el-button type="text" :size="$store.state.params.btn.size || 'mini'" v-if="!(option.editBtn==false)" @click="editHandle(scope.row,scope.$index)">{{option.editBtnText || '编辑'}}</el-button>
               <!-- 操作栏自定义 -->
               <slot name="menu" :row="scope.row" :index="scope.$index"></slot>
-              <el-button type="text" :size="$store.state.params.btn.size || 'mini'" v-if="!(option.delBtn==false)" @click="delHandle(scope.row)">{{option.delBtnText || '删除'}}</el-button>
+              <el-button type="text" :size="$store.state.params.btn.size || 'mini'" v-if="!(option.delBtn==false)" @click="delHandle(scope.row,scope.$index)"><span style="color: #F56C6C;">{{option.delBtnText || '删除'}}</span></el-button>
             </div>
           </template>
         </el-table-column>
@@ -203,8 +221,8 @@ export default {
         return {
           border: false, // 表格是否边框
           page: true, // 是否分页
-          align: 'center', // body对齐
-          menuAlign: 'center', // 表头对齐
+          align: 'left', // body对齐
+          menuAlign: 'left', // 表头对齐
           menuFix: 'right', // 操作栏固定位置
           menuWidth: 200, // 操作栏宽度
           search: false, // 是否开启查询
@@ -266,11 +284,16 @@ export default {
     defaultAllSelect: {
       type: Boolean,
       default: false
+    },
+    editable: {
+      type: Boolean
     }
   },
   data () {
     return {
+      tableKey: 'table' + new Date().getTime(),
       searchForm: {},
+      tempForm: {},
       title: '', // 弹框标题
       dialogVisible: false,
       rowData: {}, // 行数据
@@ -285,6 +308,7 @@ export default {
       },
       // 搜索表单配置
       searchOption: {},
+      daActionIndex:0,
     };
   },
   filters: {},
@@ -372,8 +396,10 @@ export default {
       get () {
         return this.formData
       },
-      set () {}
-    }
+      set (newVal) {
+        this.tempForm = newVal
+      }
+    },
   },
   methods: {
     // 排序
@@ -390,6 +416,10 @@ export default {
     },
     // 搜索
     searchHandle (form) {
+      if(this.option.page){
+        this.$set(form, 'current', 1)
+      }
+      this.$set(this, 'searchFormData', form)
       this.$emit('search-change', form)
     },
     // 清空
@@ -405,7 +435,14 @@ export default {
     // 当前页改变
     handleCurrentChange (val) {
       this.page.currentPage = val
-      this.$emit('on-load', this.page)
+      if(this.option.page){
+        // let obj = this.searchFormData
+        let obj = this.tempForm
+        this.$set(obj, 'current', val)
+        this.$emit('search-change', obj)
+      }else{
+        this.$emit('on-load', this.page)
+      }
       this.$emit('current-change', this.page)
     },
     // 判断是否需要超出文字提示
@@ -416,6 +453,11 @@ export default {
     },
     // 关闭弹框
     handleClose () {
+      this.formOpton.column.forEach((item,index)=>{
+        if(['imageUpload','fileUpload'].indexOf(item.type)!=-1){
+          item.fileList = []
+        }
+      })
       this.rowData = {}
       this.dialogVisible = false
     },
@@ -425,7 +467,7 @@ export default {
         this.$emit('addRow', form)
       }
       if (this.optype == 'editRow') {
-        this.$emit('editRow', form)
+        this.$emit('editRow', form, this.daActionIndex)
       }
       this.handleClose()
     },
@@ -454,7 +496,8 @@ export default {
       this.dialogVisible = true
     },
     // 查看
-    viewHandle (row) {
+    viewHandle (row,index) {
+      this.daActionIndex = index
       this.formOpton = JSON.parse(JSON.stringify(this.option))
       this.formOpton.submitBtnText = '提交'
       this.title = '查看'
@@ -472,10 +515,11 @@ export default {
           this.formOpton.column[i].display = false
         }
       }
-      // this.formOpton.column = temp
+      this.formOpton.column = temp
       this.dialogVisible = true
     },
-    editHandle (row) {
+    editHandle (row,index) {
+      this.daActionIndex = index
       this.formOpton = this.option // JSON.parse(JSON.stringify(this.option))
       this.formOpton.submitBtnText = this.formOpton.submitBtnText || '提交'
       this.title = this.formOpton.editDialogText || '编辑'
@@ -499,18 +543,18 @@ export default {
       // this.formOpton.column = temp
       this.dialogVisible = true
     },
-    delHandle (row) {
-      this.$confirm('此操作将永久删除此数据, 是否继续?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        this.optype = 'delRow'
-        this.$emit('delRow', row)
-      }).catch(() => {
+    delHandle (row,index) {
+      this.$confirm('此操作将永久删除此数据, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.optype = 'delRow'
+        this.$emit('delRow', row,index)
+      }).catch(() => {
 
-      });
-    },
+      });
+    },
     // 清空多选
     clearSelect () {
       this.$refs[this.refs].clearSelection()
@@ -530,10 +574,10 @@ export default {
           height -= ($('.tablepagination').height() + 40)
         }
       }
-      $(".el-table__body-wrapper")[0].style.maxHeight = height
-      $(".el-table__body-wrapper").height(height)
+      $('.'+ this.tableKey + ' ' + ".el-table__body-wrapper")[0].style.maxHeight = height
+      $('.'+ this.tableKey + ' ' + ".el-table__body-wrapper").height(height)
       if(this.option.menuFix) {
-        $(".el-table__fixed-body-wrapper").height(height)
+        $('.'+ this.tableKey + ' ' + ".el-table__fixed-body-wrapper").height(height)
       }
     },
     doLayout(){
@@ -547,6 +591,7 @@ export default {
     styleRowItem (row, item, type) {
       let val = row[item.prop]
       let color = ""
+      let bgcolor = ''
       if(item.expressControl && item.expressControl.length > 0) {
         for(let i in item.expressControl) {
           if(item.expressControl[i].express) {
@@ -568,8 +613,40 @@ export default {
           }
         }
       }
+      if(item.conditionControl && item.conditionControl.length > 0) {
+        let hadFix = false
+        for(let i in item.conditionControl) {
+          if(item.conditionControl[i].value) {
+            let arr = item.conditionControl[i].value.split(',')
+            if(arr.indexOf(row[item.prop]) > -1) {
+              hadFix = true
+              if(item.conditionControl[i].text) {
+                val = item.conditionControl[i].text
+              }else{
+                val = row[item.prop+'_1'] ? row[item.prop+'_1'] : row[item.prop]
+              }
+              if(item.conditionControl[i].color) {
+                color = item.conditionControl[i].color
+              }
+              if(item.conditionControl[i].bgcolor) {
+                bgcolor = item.conditionControl[i].bgcolor
+              }
+            }
+          }
+        }
+        if(!hadFix) {
+          if(item.color) {
+            color = item.color
+          }
+          if(item.backColor) {
+            bgcolor = item.backColor
+          }
+        }
+      }
       if(type == 'color') {
         return color
+      }else if(type == 'bgcolor'){
+        return bgcolor
       }else{
         return val
       }
@@ -617,7 +694,7 @@ export default {
   }
   th{
     font-size: 14px;
-    font-family: Source Han Sans CN;
+    font-family: MiSans-Demibold;
     font-weight: 600;
     color: #222222;
   }
@@ -720,5 +797,77 @@ export default {
 // 文字提示
 .el-tooltip__popper{
   max-width: 70%;
+}
+.jvs-table-nocolumn{
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  .jvs-table-top, .table-title, .table-body-box, .tablepagination{
+    display: none;
+  }
+}
+.jvs-table-nocolumn::before{
+  content: "";
+  display: block;
+  width: 457px;
+  height: 180px;
+  background-image: url(/jvs-ui/static/img/emptyImage.ca3665f2.png);
+  background-size: 260px 123px;
+  background-repeat: no-repeat;
+  background-position: center;
+  position: absolute;
+  left: calc(50% - 228px);
+  top: calc(50% - 180px);
+}
+.jvs-table-nocolumn::after{
+  content: "抱歉，没有找到相关搜索内容！";
+  position: absolute;
+  left: calc(50% - 80px);
+  top: calc(50%);
+}
+.img-file-list{
+  padding: 30px 35px;
+  .if-item{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    margin-top: 15px;
+    box-sizing: border-box;
+    width: 300px;
+    flex-wrap: nowrap;
+    min-height: 40px;
+    background: #ebeef5;
+    border-radius: 5px;
+    border: 1px solid #ebeef5;
+    overflow: hidden;
+    img{
+      display: block;
+      width: 50px;
+      height: 50px;
+      margin-right: 10px;
+    }
+    i{
+      cursor: pointer;
+      font-size: 20px;
+    }
+    span{
+      flex: 1;
+      margin-right: 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: pre;
+      font-size: 16px;
+    }
+  }
+  .if-item:nth-of-type(1){
+    margin-top: 0;
+  }
+  .if-item:hover{
+    border-color: #409EFF;
+    span{
+      color: #409EFF;
+    }
+  }
 }
 </style>

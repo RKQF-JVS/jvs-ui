@@ -8,3 +8,11 @@ export function getTenantInfo(params) {
     params: params
   });
 }
+
+// 用户填写邀请码
+export function inviteCode(code) {
+  return request({
+    url: `/mgr/jvs-auth/invite/${code}`,
+    method: "put",
+  });
+}

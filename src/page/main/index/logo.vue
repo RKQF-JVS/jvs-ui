@@ -12,9 +12,7 @@
       ';background-color:'+ $store.getters.theme.logo.backgroundColor+';'
     "
   >
-    <div v-if="sysInfo.logo" class="logo-image" :style="'display:block;background-image:url('+ sysInfo.logo +')'" @click="indexgo"></div>
-    <img @click="indexgo"  v-if="false && sysInfo.logo" class="logo-image" :src="sysInfo.logo" alt="" ><!-- :style="'margin-top: calc( ( ' + $store.getters.theme.logo.height + ' - 60px ) / 2);'" -->
-    <!-- <img v-else class="logo-image" src="./logonew.png" alt="" :style="'margin-top: calc( ( ' + $store.getters.theme.logo.height + ' - 60px ) / 2);'"> -->
+    <div v-if="userInfo && userInfo.tenant && userInfo.tenant.logo" class="logo-image" :style="'display:block;background-image:url('+ userInfo.tenant.logo +')'" @click="indexgo"></div>
     <transition name="fade">
       <div v-if="false && keyCollapse && sysInfo.bgImg" :style="'background-image:url('+ sysInfo.bgImg +');cursor:pointer;width: 60px;height: 60px;background-size: 100% 100%;background-repeat: no-repeat;'" @click="indexgo"></div>
     </transition>
@@ -27,52 +25,12 @@
         >{{this.sysInfo.shortName || title || ''}}</span>
       </template>
     </transition-group>
-    <!-- <div
-      v-if="cardTip"
-      class="cardtipsbox"
-      @mouseleave="showCardTip(false)"
-      :style="'width: calc( 100% - 590px - ' + $store.getters.theme.logo.width +');left:'+(isCollapse ? '60px' : $store.getters.theme.logo.width)+';height:'+(cardTipList.length > 5 ? '100%;': 'auto;')"
-    >
-      <vue-scroll
-        :ops="ops"
-        :style="{'height': 'calc( 100% - 0px )'}"
-        class="el-scrollbar__wrap"
-      >
-        <div
-          class="ulList"
-          v-if="cardTipList && cardTipList.length>0"
-        >
-          <div
-            v-for="(item,index) in cardTipList"
-            :key="index"
-          >
-            <h3>{{item.name}}</h3>
-            <ul>
-              <li
-                v-for="(it,itindex) in item.childList"
-                :key="itindex+'child'"
-              >
-                <div @click="openItem(it, item)">
-                  <a>{{it.name}}</a>
-                  <i
-                    v-show="it.collected"
-                    :class="{'el-rate__icon el-icon-star-on': true, 'collected':it.collected}"
-                    @click.stop="collectHandle(it)"
-                  ></i>
-                </div>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </vue-scroll>
-    </div> -->
   </div>
 </template>
 
 <script>
 import { mapGetters, Store } from "vuex";
 import { GetMenuList, favorite, delfavorite, GetMenu } from '@/api/admin/menu'
-import { getAllTentan } from "@/api/login"
 export default {
   name: "logo",
   imgSrc: "",
@@ -121,23 +79,21 @@ export default {
     };
   },
   created () {
-    // this.getTenantList()
   },
   computed: {
-    ...mapGetters(["website", "keyCollapse", "menuAll", "system"]), //  "menu"
+    ...mapGetters(["website", "keyCollapse", "menuAll", "system", "userInfo"]), //  "menu"
   },
   methods: {
     async getAllMenuList () {
-      // console.log(this.system)
-      // console.log(this.menuAll)
       const arr = [...this.menuAll]
+      let appitem = null
       const index = arr.findIndex(item => {
+        if(this.system === item.id && item.extend && item.extend.type == 'jvsapp') {
+          appitem = item
+        }
         return this.system === item.id
       })
-      // console.log(this.menuAll)
-      this.cardTipList = this.menuAll[index].children ? this.menuAll[index].children : []
-      // console.log('匹配是否收藏。。。。')
-      // console.log(this.menu)
+      this.cardTipList = (this.menuAll[index] && this.menuAll[index].children) ? this.menuAll[index].children : []
       for (let i in this.cardTipList) {
         if (this.cardTipList[i].childList && this.cardTipList[i].childList.length > 0) {
           for (let j in this.cardTipList[i].childList) {
@@ -150,39 +106,17 @@ export default {
         }
       }
       if(this.cardTipList) {
-        this.$emit('childMenu', this.cardTipList) // this.cardTipList[0])
+        this.$emit('childMenu', this.cardTipList)
       }
-      // let obj = {}
-      // if(this.systemId > -1 || this.systemId != '') {
-      //   obj.systemId = this.systemId
-      // }
-      // GetMenuList(obj).then(res => {
-      //   if (res.data.code == 0) {
-      //     this.cardTipList = res.data.data
-      //     // console.log('匹配是否收藏。。。。')
-      //     // console.log(this.menu)
-      //     for (let i in this.cardTipList) {
-      //       if (this.cardTipList[i].childList && this.cardTipList[i].childList.length > 0) {
-      //         for (let j in this.cardTipList[i].childList) {
-      //           if (this.isCollect(this.cardTipList[i].childList[j])) {
-      //             this.cardTipList[i].childList[j].collected = true
-      //           } else {
-      //             this.cardTipList[i].childList[j].collected = false
-      //           }
-      //         }
-      //       }
-      //     }
-      //     if(this.cardTipList) {
-      //       this.$emit('childMenu', this.cardTipList) // this.cardTipList[0])
-      //     }
-      //   }
-      // })
+      this.$emit('setAppItem', appitem)
+      this.$forceUpdate()
     },
     // 跳转主页
     indexgo () {
       this.$router.push({
         path: "/"
       })
+      this.$emit('closeOther', true)
     },
     // 显示悬浮卡片
     showCardTip (bool) {
@@ -239,33 +173,6 @@ export default {
       }
       return false
     },
-    // 获取所有租户
-    getTenantList () {
-      if(this.$store.state.common.tenantInfo) {
-        this.sysInfo = this.$store.state.common.tenantInfo
-      }else{
-        getAllTentan().then(({ data }) => {
-          if(data.code == 0) {
-            let tid = this.$store.getters.tenantId
-            if(data.data && data.data.length > 0) {
-              if(tid) {
-                for(let i in data.data) {
-                  if(data.data[i].id == tid) {
-                    this.sysInfo = data.data[i]
-                  }
-                }
-              }else{
-                this.sysInfo = data.data[0]
-              }
-            }
-            if(this.$store.state.common.tenantInfo) {
-              let tp = JSON.parse(JSON.stringify(this.$store.state.common.tenantInfo))
-              this.sysInfo = Object.assign(tp, this.sysInfo)
-            }
-          }
-        })
-      }
-    },
   },
   watch: {
     systemId: {
@@ -277,6 +184,13 @@ export default {
       handler (newVal, oldVal) {
         if(newVal) {
           this.sysInfo = newVal
+        }
+      }
+    },
+    needFresh: {
+      handler (newVal, oldVal) {
+        if(newVal != -1) {
+          this.getAllMenuList()
         }
       }
     }
@@ -307,8 +221,9 @@ export default {
   font-size: 20px;
   overflow: hidden;
   box-sizing: border-box;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.15);
+  //box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.15);
   // color: rgba(255, 255, 255, 0.8);
+  border-bottom: 2px solid #f0f2f5;
   color: #1890ff;
   z-index: 1024;
   display: flex;
@@ -332,7 +247,7 @@ export default {
     // width: 50px;
     // height: 50px;
     width: 200px;
-    height: 60px;
+    height: 50px;
     overflow: hidden;
     cursor: pointer;
     background-size: contain;

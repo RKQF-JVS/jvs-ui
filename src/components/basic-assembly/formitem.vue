@@ -1,8 +1,9 @@
 <template>
-  <div :class="{'jvs-form-item': true, 'jvs-form-item-disabled': item.disabled}" style="display:flex;align-items:center;">
+  <div :ref="item.prop" :class="{'jvs-form-item': true, 'jvs-form-item-disabled': item.disabled}" style="display:flex;align-items:center;">
+    <!-- 普通文本框 -->
     <el-input
       v-model="forms[item.prop]"
-      v-if='item.type==="input" || !item.type'
+      v-if='(item.type==="input" || !item.type) && !item.searchable && getDisableexpress("show")'
       :show-word-limit="item.showwordlimit"
       :minlength="item.minlength"
       :maxlength="item.maxlength"
@@ -13,10 +14,23 @@
       :prefix-icon="item.prefixicon"
       :suffix-icon="item.suffixicon"
       :size="$store.state.params.form.size || item.size || 'mini'"
+      @focus="beforeValue = forms[item.prop]"
       @blur="formChange"
     >
       <template v-if='item.prepend' slot="prepend">{{item.prepend}}</template>
       <template v-if='item.append' slot="append">{{item.append}}</template>
+    </el-input>
+    <span
+      v-if='(item.type==="input" || !item.type) && !item.searchable && !getDisableexpress("show")'
+      :style="'padding: 0px 10px;border-radius: 5px;'+
+      (getDisableexpress('color') ? ('color:' + getDisableexpress('color') + ';') : '') +
+      (getDisableexpress('bgcolor') ? ('background-color:' + getDisableexpress('bgcolor') + ';') : '') +';'">{{forms[item.prop]}}</span>
+    <!-- 搜索文本框 -->
+    <el-input v-if='(item.type==="input" || !item.type) && item.searchable' disabled v-model="forms[item.prop]" placeholder="搜索选择所需数据" class="show-disable">
+      <template slot="append" v-if="!item.disabled">
+        <jvs-button icon="el-icon-search" type="info" @click="openDialog"></jvs-button>
+        <jvs-button icon="el-icon-delete" type="warning" @click="clearSearch"></jvs-button>
+      </template>
     </el-input>
     <span class="el-form-item__error" v-if='errorShow'>{{item.regularMessage}}</span>
     <el-input
@@ -39,6 +53,7 @@
       :disabled="item.disabled"
       :size="$store.state.params.form.size || item.size || 'mini'"
       :autosize="item.autoSize || false"
+      @focus="beforeValue = forms[item.prop]"
       @blur="formChange"
     ></el-input>
     <el-input
@@ -62,8 +77,13 @@
       :controls-position="item.controlsposition"
       :placeholder="item.placeholder || item.label"
       :size="$store.state.params.form.size || item.size || 'mini'"
+      :class="{'input-number-hide': [undefined, null].indexOf(forms[item.prop]) > -1, 'show-thoudsandth-number': (item.thoudsandthable && showThoudsandth)}"
       @change="formChange"
+      @focus="showThoudsandthHandle(false); beforeValue = forms[item.prop];"
+      @blur="showThoudsandthHandle(true)"
     ></el-input-number>
+    <span v-if='item.type==="inputNumber" && item.thoudsandthable && showThoudsandth' :class="{'input-number-Thousandth': true, 'input-number-Thousandth-disabled': item.disabled}" @click="showThoudsandthHandle(false)">{{getThousandthNumber(forms[item.prop])}}</span>
+    <span v-if='item.type==="inputNumber" && item.disabled && !item.thoudsandthable' class="input-number-textcon">{{( (forms[item.prop] != null && forms[item.prop] != undefined && forms[item.prop] != '') || forms[item.prop] == 0 ) ? forms[item.prop] : (item.unit ? '' : '-')}}</span>
 
     <el-select
       v-if='item.type==="select"'
@@ -85,6 +105,7 @@
         :value="sitem[(item.props && item.props.value) || 'value']"
       >
         <span style="float: left">{{ sitem[(item.props && item.props.label) || 'label'] }}</span>
+        <span v-if="item.props && item.props.secTitle && sitem[item.props.secTitle]" style="float: right; color: #8492a6; font-size: 13px">{{ sitem[item.props.secTitle] }}</span>
         <span v-if="sitem.tip" style="float: right; color: #8492a6; font-size: 13px">{{ sitem.tip }}</span>
       </el-option>
     </el-select>
@@ -283,12 +304,12 @@
     </el-checkbox-group>
 
     <!-- 颜色选择器 -->
-    <el-color-picker v-if="(item.type == 'colorSelect')" v-model="forms[item.prop]" :placeholder="item.placeholder || item.label" @change="formChange"></el-color-picker>
+    <el-color-picker v-if="(item.type == 'colorSelect')" v-model="forms[item.prop]" :placeholder="item.placeholder || item.label" :predefine="predefineColors" @change="formChange"></el-color-picker>
 
     <!-- 图片 -->
     <ul
       class="el-upload-list el-upload-list--picture-card"
-      v-if='item.type==="image"'
+      v-if='item.type==="image" && forms[item.prop] && forms[item.prop].length > 0'
     >
       <li
         tabindex="0"
@@ -315,6 +336,8 @@
         </el-image>
       </li>
     </ul>
+    <!-- 没有图片 -->
+    <span v-if='item.type==="image" && (!forms[item.prop] || forms[item.prop].length==0)'>无</span>
 
     <!-- 上传图片 -->
     <el-upload
@@ -362,7 +385,7 @@
       :multiple="item.multipleUpload"
       :limit="item.limit"
       :headers="item.headers"
-      :file-list="(item.parent && item.parent.type == 'tableForm') ? tableFileList[tableRowAIndex] : item.fileList"
+      :file-list="(item.parent && item.parent.type == 'tableForm') ? ((tableFileList[tableRowAIndex] && tableFileList[tableRowAIndex].length > 0) ? tableFileList[tableRowAIndex] : item.fileList) : item.fileList"
       :size="$store.state.params.form.size || item.size || 'mini'"
       :data="formatUploadData(item)"
       :auto-upload="true"
@@ -379,7 +402,7 @@
     </el-upload>
 
     <!-- 文件列表 -->
-    <ul class="el-upload-list el-upload-list--text" v-if="item.type==='file'">
+    <ul class="el-upload-list el-upload-list--text" v-if="item.type==='file' && forms[item.prop] && forms[item.prop].length > 0">
       <li
         class="el-upload-list__item is-success"
         v-for="fi in forms[item.prop]"
@@ -398,13 +421,14 @@
         </label>
         <i class="el-icon-close"></i>
       </li>
-      <li class="el-upload-list__item" v-if='!forms[item.prop] || forms[item.prop].length==0'>
+      <!-- <li class="el-upload-list__item" v-if='!forms[item.prop] || forms[item.prop].length==0'>
         <a class="el-upload-list__item-name">
           <i class="el-icon-document"></i>
           {{'文件名称'}}
         </a>
-      </li>
+      </li> -->
     </ul>
+    <span v-if="item.type==='file' && (!forms[item.prop] || forms[item.prop].length==0)">无</span>
 
     <!-- 选项卡 -->
     <jvs-tab
@@ -423,6 +447,14 @@
       :postList="postList"
       :resetRadom="resetRadom"
       :originForm="forms"
+      :designId="designId"
+      :changeRandom="changeRandom"
+      :changeDomItem="changeDomItem"
+      :isView="isView"
+      :dataModelId="dataModelId"
+      :execsList="execsList"
+      :jvsAppId="jvsAppId"
+      @reInitData="reInitData"
       @tab-click="tabClick"
       @formChange="tabFormchange">
     </jvs-tab>
@@ -449,10 +481,10 @@
     <!-- 描述框 -->
     <div
       v-if="item.type==='box'"
-      :style="'width:100%;padding:0 16px;border-radius:4px;height:36px;line-height:36px;text-align:'+item.contentposition+';font-size:'+item.fontsize+'px;color:'+item.textcolor+';font-weight:'+item.fontweight+';background-color:'+(item.boxback?item.boxback:'none')+';'"
+      :style="'width:100%;padding:0 16px;border-radius:4px;text-align:'+item.contentposition+';font-size:'+item.fontsize+'px;color:'+item.textcolor+';font-weight:'+item.fontweight+';background-color:'+(item.boxback?item.boxback:'none')+';'"
     >
       {{forms[item.prop]}}
-      <span v-if='!forms[item.prop]'>{{item.text}}</span>
+      <span v-if='!forms[item.prop]' v-html="getHtmlText(item.text)"></span>
     </div>
     <!-- 链接 -->
     <a
@@ -507,14 +539,31 @@
       </div>
 
     <!-- p文字 -->
-    <p v-if="item.type === 'p'"  :style="{'text-align': item.contentposition,'font-size':item.fontsize+'px',color:item.textcolor}">{{item.text}}</p>
+    <p v-if="item.type === 'p'" class="form-item-p" :style="`text-align:${item.contentposition};font-size:${item.fontsize}px;color:${item.textcolor};margin:0;`">
+      <span>
+        <i></i>
+        <b>{{item.text}}</b>
+      </span>
+    </p>
 
     <!-- 分割线 -->
     <el-divider v-if="item.type === 'divider'" :content-position='item.contentposition'>{{item.text}}</el-divider>
 
+    <!-- 流水号 -->
+   <!-- <div
+     v-if="item.type==='serialNumber' && forms[item.prop]"
+     :style="'width:100%;padding:0 16px;border-radius:4px;'"
+   >
+     {{forms[item.prop]}}
+     <span v-if='!forms[item.prop]'>&#45;&#45;</span>
+   </div> -->
+    <el-input v-if="item.type==='serialNumber'" disabled v-model="forms[item.prop]" placeholder="根据流水号规则自动生成" class="show-disable"></el-input>
+
+    <el-input v-if="item.type==='positionMap'" disabled v-model="forms[item.prop]" placeholder="请用移动端打开页面获取位置信息" class="show-disable"></el-input>
+
     <!-- 用户组件 -->
     <userForm
-      v-if="item.type==='user'"
+      v-if="['user', 'role', 'department', 'group', 'job'].indexOf(item.type) > -1"
       :form="forms"
       :prop="item.prop"
       :selectable="item.multiple"
@@ -522,12 +571,18 @@
       :enableinput="item.allowinput"
       :disabled="item.disabled"
       :deptable="item.deptable"
-      :props="item.props"
+      :infoable="item.infoable"
+      :props="item.props ? item.props : {'label': (item.prop+'_1'), 'value': item.prop}"
+      :type="item.type"
       :resetRadom="resetRadom"
+      :userAllList="userList"
+      :departmentList="departmentList"
+      :roleOption="roleOption"
+      :postList="postList"
       @change="formChange" /> <!-- @formChange="tabFormchange" -->
     <!-- 部门组件 -->
     <el-cascader
-      v-if="item.type==='department'"
+      v-if="false && item.type==='department'"
       v-model="forms[item.prop]"
       size="mini"
       :options="departmentList"
@@ -547,7 +602,7 @@
     >
     </el-cascader>
     <!-- 角色组件 -->
-    <el-select v-model="forms[item.prop]" filterable placeholder="请选择角色" :disabled="item.disabled" v-if="item.type==='role'" :multiple='item.multiple' @change="changeHandle">
+    <el-select v-model="forms[item.prop]" filterable placeholder="请选择角色" :disabled="item.disabled" v-if="false && item.type==='role'" :multiple='item.multiple' @change="changeHandle">
       <el-option
         v-for="ir in roleOption"
         :key="ir.id+'role'+ir.roleName"
@@ -556,11 +611,11 @@
       </el-option>
     </el-select>
     <!-- 岗位组件 -->
-    <el-select v-model="forms[item.prop]" filterable placeholder="请选择岗位" v-if="item.type==='post'"
+    <el-select v-model="forms[item.prop]" filterable placeholder="请选择岗位" v-if="false && item.type==='job'"
       :multiple='item.multiple' :disabled="item.disabled" @change="changeHandle">
       <el-option
         v-for="ir in postList"
-        :key="ir.id+'post'+ir.name"
+        :key="ir.id+'job'+ir.name"
         :label="ir.name"
         :value="ir.id">
       </el-option>
@@ -568,7 +623,7 @@
 
     <!-- 可编辑表格 -->
     <div v-if="item.type == 'tableForm'" style="flex:1;width:100%;">
-      <tableForm :item="item" :option="tableFormOption"
+      <tableForm :formRef="formRef" :item="item" :option="tableFormOption"
         :data="forms[item.prop]" :originOption="originOption"
         :defalutSet="defalutSet" :rowData="rowData"
         :roleOption="roleOption"
@@ -576,6 +631,15 @@
         :departmentList="departmentList"
         :postList="postList"
         :resetRadom="resetRadom"
+        :designId="designId"
+        :forms="forms"
+        :dataModelId="dataModelId"
+        :changeRandom="changeRandom"
+        :changeDomItem="changeDomItem"
+        :isView="isView"
+        :execsList="execsList"
+        :jvsAppId="jvsAppId"
+        @reInitData="reInitData"
         @setTable="setTableHandle">
         <template slot="menuBtn" slot-scope="scope">
           <jvs-button v-if="item.editable && item.delBtn" type="text" @click="deleteRow(scope.row, scope.index)">删除</jvs-button>
@@ -587,7 +651,8 @@
     </div>
 
     <!-- 计数器   滑块   显示单位 -->
-    <span v-if="['inputNumber', 'slider'].indexOf(item.type) > -1 && item.unit" style="padding-left: 5px;">{{item.unit}}</span>
+    <span v-if="['inputNumber', 'slider'].indexOf(item.type) > -1 && item.unit" class="unit-item-empty-span" style="padding-left: 5px;">{{(item.disabled && (!forms[item.prop] && forms[item.prop] !== 0)) ? '-  ' : ''}}</span>
+    <span v-if="['inputNumber', 'slider'].indexOf(item.type) > -1 && item.unit">{{item.unit.trim()}}</span>
 
     <!-- 地区选择 -->
     <el-cascader
@@ -611,7 +676,7 @@
     </el-cascader>
 
     <!-- 富文本 -->
-    <div v-if="item.type === 'htmlEditor'" :id="item.prop+'-editor'" style="z-index: 1000"></div>
+    <div v-if="item.type === 'htmlEditor'" :id="item.prop+'-editor'" style="z-index: 1000;width:100%;"></div>
 
     <!-- 按钮 -->
     <jvs-button v-if="item.type === 'button'" :disabled="item.disabled" :type="item.buttonType" :round="item.buttonRound" :size="item.size" @click="btnClick">{{item.text}}</jvs-button>
@@ -637,18 +702,6 @@
     >
     </el-cascader>
 
-    <!-- 数据源 -->
-    <datasourceForm
-      style="flex:1;"
-      v-if="item.type==='datasource'"
-      :item="item"
-      :form="forms"
-      :prop="item.prop"
-      :selectable="item.multiple"
-      :disabled="item.disabled"
-      :resetRadom="resetRadom"
-      @change="formChange" />
-
     <!-- 步骤条 -->
     <stepBar
       :formRef="formRef"
@@ -666,6 +719,14 @@
       :rowData="rowData"
       :resetRadom="resetRadom"
       :originForm="forms"
+      :designId="designId"
+      :changeRandom="changeRandom"
+      :changeDomItem="changeDomItem"
+      :isView="isView"
+      :dataModelId="dataModelId"
+      :execsList="execsList"
+      :jvsAppId="jvsAppId"
+      @reInitData="reInitData"
       @formChange="tabFormchange">
     </stepBar>
 
@@ -681,6 +742,9 @@
       :departmentList="departmentList"
       :postList="postList"
       :resetRadom="resetRadom"
+      :designId="designId"
+      :execsList="execsList"
+      :jvsAppId="jvsAppId"
       @formChange="tabFormchange"
       >
     </formCard>
@@ -697,18 +761,44 @@
       :departmentList="departmentList"
       :postList="postList"
       :resetRadom="resetRadom"
+      :designId="designId"
+      :execsList="execsList"
+      :jvsAppId="jvsAppId"
       @formChange="tabFormchange"
     ></reportTable>
 
     <!-- 时间线 -->
-    <el-timeline v-if="item.type == 'timeline' && forms[item.prop]">
+    <el-timeline v-if="item.type == 'timeline' && forms[item.prop]" style="max-height: 300px; overflow: hidden; overflow-y: auto;">
       <el-timeline-item
         v-for="(activity, index) in forms[item.prop]"
         :key="item.prop + 'timeline-' + index"
         :timestamp="activity[item.timestamp || 'timestamp']">
-        {{activity[item.content || 'content']}}
+        <div v-html="activity[item.content || 'content']"></div>
       </el-timeline-item>
     </el-timeline>
+
+    <!-- 子表单 -->
+    <childrenForm
+      v-if="item.type == 'childrenForm'"
+      :formItem="item"
+      :originOption="originOption"
+      :forms="forms[item.prop]"
+      :resetRadom="resetRadom"
+      :designId="designId"
+      @formChange="tabFormchange"
+    ></childrenForm>
+
+    <!-- 关联表单 -->
+    <childrenForm
+      v-if="item.type == 'connectForm'"
+      :formItem="item"
+      :selectOption="selectOption"
+      :originOption="originOption"
+      :forms="forms[item.prop]"
+      :resetRadom="resetRadom"
+      :designId="designId"
+      @formChange="formChange"
+    ></childrenForm>
 
     <!-- 右侧提示 -->
     <el-tooltip v-if="item.tips && item.tips.position == 'right' && item.tips.text" class="form-item-tooltip" effect="dark" :content="item.tips.text" placement="top">
@@ -717,6 +807,36 @@
 
     <!-- 后置插槽 -->
     <slot v-if="item.appendSlot" :name="item.prop+'AppendItem'"></slot>
+
+    <!-- 搜索弹框 -->
+    <el-dialog
+      :title="item.label"
+      :visible.sync="searchVisible"
+      append-to-body
+      :before-close="searchClose">
+      <div v-if="searchVisible" class="table-show search-form-item-table">
+        <jvs-table
+          :option="searchOption"
+          :data="searchData"
+          :index="true"
+          :page="page"
+          :loading="searchLoading"
+          @on-load="getListData"
+          @current-change="handleCurrentChange"
+          @row-click="rowClick">
+          <!-- 查询条件 -->
+          <template slot="headerTop">
+            <jvs-form class="search-form" v-if="searchOption.column.length > 0" :option="searchOption" :formData="queryParams" @submit="queryHandle" @reset="resetQueryHandle" :isSearch="true" :designId="$route.query.id || ''">
+              <template v-for="sitem in queryBeforeSlot" :slot="sitem.prop+'Before'">
+                <el-select v-model="queryOprator[sitem.prop]" placeholder="请选择" :key="sitem.prop+'-before-search'" class="bofore-append" size="mini">
+                  <el-option v-for="op in sitem.list" :key="sitem.prop+'-option-item-'+op.value" :label="op.label" :value="op.value"></el-option>
+                </el-select>
+              </template>
+            </jvs-form>
+          </template>
+        </jvs-table>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -725,26 +845,27 @@ import userForm from './userForm'
 import iconList from '@/const/iconfont'
 import entryIcon from '@/const/entryIcon'
 import tableForm from '@/components/basic-assembly/tableForm'
-import datasourceForm from './datasourceForm'
 import systemIcon from '@/const/systemIcon'
 import stepBar from './stepBar'
 import formCard from './formcard'
 import reportTable from './reportTable'
+import childrenForm from './childrenForm.vue'
+import {ruleRun} from "@/api/common";
 // import {getSelectData, getFetchTable, getLineDataOfGet, getFormReviewData} from '../api/tableDesignsenior'
 import {getSelectData} from '@/api/index'
 import {areaList} from '@/const/chinaArea.js'
 import {getClassifyDictTree, getSystemDictItems} from '@/api/newDesign'
 import E from 'wangeditor'
-import {sendMyRequire} from '@/api/newDesign'
+import { getModelAllFields } from '@/components/template/api'
 export default {
   name: "formitem",
   components: {
     userForm,
     tableForm,
-    datasourceForm,
     stepBar,
     formCard,
-    reportTable
+    reportTable,
+    childrenForm
   },
   props: {
     // 表单对象
@@ -816,6 +937,39 @@ export default {
     },
     tableRowAIndex: {
       type: Number
+    },
+    designId: {
+      type: String
+    },
+    dataModelId: {
+      type: String
+    },
+    changeRandom: {
+      type: Number
+    },
+    changeDomItem: {
+      type: Object
+    },
+    isView: {
+      type: Boolean
+    },
+    disabledControl: {
+      type: Boolean
+    },
+    execsList: {
+      type: Array
+    },
+    jvsAppId:  {
+      type: String
+    },
+    originForm: {
+      type: Object
+    },
+    parentDomWidth: {
+      type: Number,
+      default: ()=> {
+        return 0
+      }
     }
   },
   computed: {
@@ -831,8 +985,8 @@ export default {
           editBtn: false,
           page: false,
           border: this.item.border,
-          align: 'center',
-          menuAlign: 'center',
+          align: this.item.align || 'left',
+          menuAlign: this.item.menuAlign || 'left',
           cancal: false,
           showOverflow: true,
           hideTop: this.item.hideTop || false,
@@ -891,10 +1045,56 @@ export default {
       imageValidate: false,
       fileValidate: false,
       eventList: ['button', 'input', 'textarea', 'inputNumber', 'select', 'slider', 'switch', 'datePicker', 'timeSelect', 'timePicker',
-      'radio', 'checkbox', 'imageUpload', 'fileUpload', 'htmlEditor', 'cascader', 'datasource', 'chinaArea', 'department', 'role', 'user', 'post'],
+      'radio', 'checkbox', 'imageUpload', 'fileUpload', 'htmlEditor', 'cascader', 'datasource', 'chinaArea', 'department', 'role', 'user', 'job'],
       initHtml: '', // 记录富文本初始值
       iconToolWidth: 400, // 图标组件工具栏宽
-      tableFileList: [ [] ]
+      tableFileList: [ [] ],
+      searchVisible: false,
+      page: {
+        total: 0, // 总页数
+        currentPage: 1, // 当前页数
+        pageSize: 20, // 每页显示多少条
+        pageSizes: [20, 50, 100, 200, 500, 1000], // 分页大小
+      },
+      searchLoading: false,
+      queryParams: {},
+      searchData: [],
+      searchOption: {
+        page: true,
+        search: true,
+        menu: false,
+        addBtn: false,
+        isSearch: true,
+        submitBtnText: '查询',
+        labelWidth: 'auto',
+        column: []
+      },
+      queryBeforeSlot: [],
+      queryOprator: {},
+      showThoudsandth: true,
+      predefineColors: [
+        '#ffd700',
+        '#ff8c00',
+        '#ff4500',
+        '#c71585',
+        '#FF99CC',
+        '#FF6666',
+        '#CCCCFF',
+        '#CCCCCC',
+        '#99CCFF',
+        '#99CC99',
+        '#90ee90',
+        '#66CC66',
+        '#669933',
+        '#663366',
+        '#490954',
+        '#3471ff',
+        '#333300',
+        '#1e90ff',
+        '#00ced1',
+        '#003399'
+      ],
+      beforeValue: null
     };
   },
   methods: {
@@ -929,6 +1129,11 @@ export default {
       }
     },
     async initItem () {
+      if(!this.item.disabled) {
+        if(this.item.disabledControl == true) {
+          this.item.disabled = true
+        }
+      }
       // 图标选择器
       if(this.item.type == 'iconSelect') {
         this.item.iconType = 'svg'
@@ -944,29 +1149,9 @@ export default {
           this.selectOption=this.item.dicData
         }
       } else {
-        let url=this.item.dicUrl || this.item.url
-        if (!url) {
-          return false
+        if(!this.isView) {
+          this.getSelectUrlData()
         }
-        getSelectData(url, this.item.method ? this.item.method : 'get').then(res => {
-          if(res.data.code === 0) {
-            this.selectOption = []
-            for(let sitem in res.data.data){
-              if(typeof res.data.data[sitem] == 'string') {
-                this.selectOption.push({
-                  label: res.data.data[sitem],
-                  value: res.data.data[sitem]
-                })
-              }else{
-                // this.selectOption.push({
-                //   label: res.data.data[sitem][this.item.props.label ? this.item.props.label : 'label'],
-                //   value: res.data.data[sitem][this.item.props.value ? this.item.props.value : 'value']
-                // })
-                this.selectOption.push(res.data.data[sitem])
-              }
-            }
-          }
-        })
       }
       // 系统字典
       if(this.item.datatype == 'system' && ['select', 'radio', 'checkbox'].indexOf(this.item.type) > -1 && this.item.systemDict) {
@@ -1002,13 +1187,19 @@ export default {
       }
       // 表单项默认值填充，权重小于表单初始化值
       if(this.item.defaultValue || this.item.defaultValue === false || this.item.defaultValue === "") {
-        (!this.forms[this.item.prop] && this.forms[this.item.prop] !== false && this.forms[this.item.prop] !== 0) && (this.$set(this.forms, this.item.prop, this.item.defaultValue))
+        // 时间选择 多选
+        if(this.item.type == 'timePicker' && this.item.isrange) {
+          // 不处理，不使用默认值
+        }else{
+          (!this.forms[this.item.prop] && this.forms[this.item.prop] !== false && this.forms[this.item.prop] !== 0) && (this.$set(this.forms, this.item.prop, this.item.defaultValue));
+        }
       }
       // 级联选择类
       if(this.item.type == 'cascader' && this.item.dictName) {
         getClassifyDictTree(this.item.dictName).then(res => {
           if(res.data.code == 0 && res.data.data && res.data.data.children) {
             this.cascaderList = res.data.data.children
+            this.formatCascaderOptions(this.cascaderList)
           }
         })
       }
@@ -1039,6 +1230,7 @@ export default {
       if(['imageUpload', 'fileUpload'].indexOf(this.item.type) > -1) {
         if(this.forms[this.item.prop]) {
           this.$set(this.item, 'fileList', this.forms[this.item.prop])
+          this.$set(this.tableFileList, this.tableRowAIndex, this.forms[this.item.prop])
         }
         if(!this.item.headers) {
           this.$set(this.item, 'headers', {})
@@ -1048,7 +1240,75 @@ export default {
       if(this.item.type == 'timeline' && !this.forms[this.item.prop]) {
         this.$set(this.forms, this.item.prop, [])
       }
+      if(['childrenForm', 'connectForm'].indexOf(this.item.type) > -1 && !this.forms[this.item.prop]) {
+        this.$set(this.forms, this.item.prop, {})
+      }
       this.$forceUpdate()
+    },
+    getSelectUrlData () {
+      let url=this.item.dicUrl || this.item.url
+      if (!url) {
+        return false
+      }
+      if(!this.item.formId || (this.item.formId && this.item.props && this.item.props.label)) {
+        let fs = []
+        fs = (this.item.props && this.item.props.label) ? [this.item.props.label] : []
+        if(this.item.props && this.item.props.secTitle && fs.length > 0) {
+          fs.push(this.item.props.secTitle)
+        }
+        let postData = {
+          fieldList: fs,
+          conditions: []
+        }
+        if(this.item.props && this.item.props.sourceFieldId) {
+          postData.sourceFieldId = this.item.props.sourceFieldId
+        }
+        let nomptyValue = true
+        if(this.item.dataFilterList) {
+          for(let df in this.item.dataFilterList) {
+            let dfit = {
+              enabledQueryTypes: this.item.dataFilterList[df].enabledQueryTypes,
+              fieldKey: this.item.dataFilterList[df].fieldKey,
+            }
+            if(this.item.dataFilterList[df].type == 'cust') {
+              dfit.value = this.item.dataFilterList[df].value
+            }else{
+              dfit.value = this.forms[this.item.dataFilterList[df].value]
+              if((dfit.value == undefined || dfit.value == null || dfit.value == '') &&  this.item.dataFilterList[df].enabledQueryTypes != 'isNull') {
+                nomptyValue = false
+              }
+            }
+            postData.conditions.push(dfit)
+          }
+        }
+        if(url.startsWith('/mgr/jvs-design/dynamic/data/query/list')) {
+          url = `/mgr/jvs-design/app/${this.jvsAppId}/use/dynamic/data/query/list/${this.item.formId}`
+        }
+        if(nomptyValue) {
+          getSelectData(url, this.item.method ? this.item.method : 'get', (this.item.method == 'post') ? postData : null, (this.item.method == 'post') ? this.designId : (this.item.formId ? this.item.formId : this.designId)).then(res => {
+            if(res.data.code === 0) {
+              this.selectOption = []
+              for(let sitem in res.data.data){
+                if(typeof res.data.data[sitem] == 'string') {
+                  this.selectOption.push({
+                    label: res.data.data[sitem],
+                    value: res.data.data[sitem]
+                  })
+                }else{
+                  // this.selectOption.push({
+                  //   label: res.data.data[sitem][this.item.props.label ? this.item.props.label : 'label'],
+                  //   value: res.data.data[sitem][this.item.props.value ? this.item.props.value : 'value']
+                  // })
+                  this.selectOption.push(res.data.data[sitem])
+                }
+              }
+              // console.log(this.selectOption)
+            }
+          })
+        }else{
+          this.selectOption = []
+        }
+      }
     },
     handlePictureCardPreview (url) {
       this.dialogImageUrl=url
@@ -1059,19 +1319,29 @@ export default {
       this.dialogVisible=true
     },
     handleFilePreviewUpload (file) {
-      this.$openUrl(file.url, '_blank')
+      if(file.url) {
+        this.$openUrl(file.url, '_blank')
+      }
     },
     checkIcon (key, icon) {
       this.form[key] = icon
+      this.$set(this.item, 'defaultValue', icon)
       this.$forceUpdate()
     },
     // 字段值改变传出表单
-    formChange () {
-      this.$emit('formChange', this.form)
+    async formChange () {
+      this.$emit('formChange', this.form, this.item, this.beforeValue)
       if(this.eventList.indexOf(this.item.type) > -1) {
-        this.eventRequireHandle()
+        this.eventRequireHandle('reinit')
+      }else{
+        if(this.isView !== true) {
+          this.$emit('reInitData', this.item.prop, this.item.parentKey, this.tableRowAIndex)
+          // if(this.execsList && this.execsList.indexOf(this.item.parentKey ? this.item.parentKey+'.'+this.item.prop : this.item.prop) > -1) {
+          //   this.$emit('reInitData', this.item.prop, this.item.parentKey, this.tableRowAIndex)
+          // }
+        }
       }
-      if(this.item.type == 'user') {
+      if(['user', 'role', 'department', 'group', 'job'].indexOf(this.item.type) > -1) {
         if(this.item.rules && this.item.rules.length > 0) {
           if(this.item.rules[0].required) {
             if(this.item.multiple) {
@@ -1094,17 +1364,50 @@ export default {
     // 选项卡formchange
     tabFormchange (data) {
       this.$set(this.form, this.item.prop, data)
-      this.formChange()
+      // this.formChange()
       this.$forceUpdate()
     },
     addRowHandle () {
       if(!this.forms[this.item.prop]) {
         this.$set(this.forms, this.item.prop, [])
       }
-      this.forms[this.item.prop].push({})
+      let adrow = {}
+      let keys = []
+      let pk = []
+      this.tableFormOption.tableColumn.filter(item => {
+        keys.push(item.prop)
+        pk = item.parentKey
+        // 时间范围  日期范围
+        if((item.type == 'timePicker' && item.isrange)) {
+          let val = new Date()
+          let h = val.getHours()
+          let m = val.getMinutes()
+          let s = val.getSeconds()
+          let vastr = (h<10?('0'+h) : h) + ':' + (m<10?('0'+m) : m) + ':' + (s<10?('0'+s) : s)
+          this.$set(adrow, item.prop, [vastr, vastr])
+        }
+        if(item.type == 'datePicker' && ['dates', 'daterange', 'monthrange', 'datetimerange'].indexOf(item.datetype) > -1) {
+          this.$set(adrow, item.prop, [])
+        }
+      })
+      this.forms[this.item.prop].push(adrow)
+      let _this = this
+      setTimeout( ()=> {
+        _this.$emit('reInitData', keys.join(','), pk, (this.forms[this.item.prop].length -1), 'add')
+      }, 0)
     },
     deleteRow (row, index) {
+      if(this.item.formId) {
+        if(!this.form[this.item.prop+'_del']) {
+          this.$set(this.form, (this.item.prop+'_del'), [])
+        }
+        let list = JSON.parse(JSON.stringify(this.form[this.item.prop+'_del']))
+        list.push(row)
+        this.$set(this.form, (this.item.prop+'_del'), list)
+      }
       this.forms[this.item.prop].splice(index, 1)
+
+      this.$emit('reInitData', this.item.prop, this.item.parentKey, this.tableRowAIndex, 'del')
     },
     // 同步表格数据
     setTableHandle (data) {
@@ -1162,6 +1465,7 @@ export default {
             vb = false
           }else{
             _this.$set(_this.form, prop, newHtml)
+            _this.$set(_this.item, 'defaultValue', newHtml)
             vb = true
           }
           if(_this.item.rules && _this.item.rules.length > 0) {
@@ -1182,6 +1486,7 @@ export default {
             vb = false
           }else{
             _this.$set(_this.form, prop, newHtml)
+            _this.$set(_this.item, 'defaultValue', newHtml)
             vb = true
           }
           if(_this.item.rules && _this.item.rules.length > 0) {
@@ -1194,8 +1499,11 @@ export default {
             }
           }
         }
-        _this.editor.config.uploadImgServer = '/api/file/upload/jvshtmleditor'
+        _this.editor.config.uploadImgServer = '/mgr/jvs-auth/upload/jvs-public'
         _this.editor.config.uploadFileName = 'file'
+        _this.editor.config.uploadImgHeaders = {
+          Authorization: 'Bearer ' + this.$store.getters.access_token
+        }
         _this.editor.config.uploadImgHooks = {
           // 图片上传并返回了结果，图片插入已成功
           success: function(xhr) {
@@ -1220,6 +1528,10 @@ export default {
           }
         }
         _this.editor.create()
+        if(_this.item.defaultValue) {
+          _this.editor.txt.html(_this.item.defaultValue)
+          _this.initHtml = _this.item.defaultValue
+        }
         if(_this.form[prop]) {
           _this.form[prop] = _this.form[prop].replace(/&lt;/g, "<")
           _this.form[prop] = _this.form[prop].replace(/&gt;/g, ">")
@@ -1275,26 +1587,42 @@ export default {
         this.eventRequireHandle()
       }
     },
-    eventRequireHandle () {
+    eventRequireHandle (op) {
       if(this.item.eventHttp) {
-        let tp = JSON.parse(JSON.stringify(this.item.eventHttp))
-        if(this.$store.state.labelValue && this.$store.state.labelValue.requestContentType) {
-          tp.requestContentType = this.$store.state.labelValue.requestContentType[tp.requestContentType]
+        if([undefined, null].indexOf(this.forms[this.item.prop]) > -1 && this.item.type != 'button') {
+          return false
         }
-        if(tp && tp.url) {
-          sendMyRequire(tp, this.form).then(res => {
-            if(res.data.code == 0) {
-              if(res.data.msg) {
-                this.$message.success(res.data.msg)
-                if(res.data.data) {
-                  for(let i in res.data.data) {
-                    this.$set(this.form, i, res.data.data[i])
-                  }
-                  this.$emit('formChange', this.form)
-                }
-              }
+        let obj = {}
+        if(this.item.type == 'button') {
+          obj = JSON.parse(JSON.stringify(this.forms))
+        }else{
+          obj[this.item.prop] = this.forms[this.item.prop]
+        }
+        ruleRun(this.jvsAppId, this.item.eventHttp, obj).then(res => {
+          if(res.data && res.data.code == 0) {
+            if(res.data.msg) {
+              this.$message.success(res.data.msg)
             }
-          }).catch(e => {})
+            if (res.data.data) {
+              for(let i in res.data.data) {
+                this.$set(this.form, i, res.data.data[i])
+              }
+              this.$emit('formChange', this.form)
+            }
+            if(op == 'reinit' && this.isView !== true) {
+              this.$emit('reInitData', this.item.prop, this.item.parentKey, this.tableRowAIndex)
+              // if(this.execsList && this.execsList.indexOf(this.item.parentKey ? this.item.parentKey+'.'+this.item.prop : this.item.prop) > -1) {
+              //   this.$emit('reInitData', this.item.prop, this.item.parentKey, this.tableRowAIndex)
+              // }
+            }
+          }
+        })
+      }else{
+        if(op == 'reinit' && this.isView !== true) {
+          this.$emit('reInitData', this.item.prop, this.item.parentKey, this.tableRowAIndex)
+          // if(this.execsList && this.execsList.indexOf(this.item.parentKey ? this.item.parentKey+'.'+this.item.prop : this.item.prop) > -1) {
+          //   this.$emit('reInitData', this.item.prop, this.item.parentKey, this.tableRowAIndex)
+          // }
         }
       }
     },
@@ -1329,11 +1657,194 @@ export default {
           }
         }
       }
+    },
+    formatCascaderOptions (list) {
+      for(let i in list) {
+        if(list[i].extend && list[i].extend.uniqueName) {
+          list[i].uniqueName = list[i].extend.uniqueName
+        }
+        if(list[i].children && list[i].children.length > 0) {
+          this.formatCascaderOptions(list[i].children)
+        }
+      }
+    },
+    getHtmlText (text) {
+      if(text) {
+        return text.replace(/[\n]/g, "<br/>")
+      }else{
+        return ''
+      }
+    },
+    reInitData (prop, parentKey, index, tableType) {
+      this.$emit('reInitData', prop, parentKey, index, tableType)
+    },
+    openDialog () {
+      if(!this.isView) {
+        this.searchOption.column = []
+        this.queryBeforeSlot = []
+        if(this.item.others && this.item.others.length > 0) {
+          getModelAllFields(this.jvsAppId, this.item.formId, this.designId).then(res => {
+            if(res.data && res.data.code == 0) {
+              res.data.data.filter(it => {
+                if(this.item.others.indexOf(it.fieldKey) > -1) {
+                  this.searchOption.column.push({
+                    label: it.fieldName,
+                    prop: it.fieldKey,
+                    type: it.type ? it.type : 'input',
+                    enabledQueryTypes: it.enabledQueryTypes,
+                    searchSpan: 8,
+                    datetype: 'date'
+                  })
+                }
+                this.queryBeforeSlot.push({prop: it.fieldKey, list: it.enabledQueryTypes})
+              })
+              this.searchVisible = true
+            }
+          })
+        }
+      }
+    },
+    searchClose () {
+      this.searchVisible = false
+    },
+    clearSearch () {
+      this.$set(this.forms, this.item.prop, '')
+      this.formChange()
+    },
+    // 条件查询
+    queryHandle (form) {
+      this.queryParams = form
+      this.getListData()
+    },
+    // 分页change
+    handleCurrentChange(e) {
+      this.getListData()
+    },
+    resetQueryHandle () {
+      this.queryParams = {}
+    },
+    rowClick (data) {
+      let row = data.row
+      if(this.item.props && this.item.props.label && row[this.item.props.label]) {
+        this.$set(this.forms, this.item.prop, row[this.item.props.label])
+      }else{
+        this.$set(this.forms, this.item.prop, '')
+      }
+      this.formChange()
+      this.searchVisible = false
+    },
+    getListData() {
+      this.searchLoading = true
+      let obj = {
+        fieldList: (this.item.props && this.item.props.label) ? [this.item.props.label, ...(this.item.others || [])] : [],
+      }
+      obj.size = this.page.pageSize
+      obj.current = this.page.currentPage
+      obj.conditions = []
+      for(let i in this.queryParams) {
+        if(this.queryParams[i] || this.queryParams[i] === 0 || this.queryParams[i] === false || (typeof this.queryParams[i] == 'number')) {
+          obj.conditions.push({fieldKey: i, enabledQueryTypes: 'eq', value: this.queryParams[i]})
+        }
+      }
+      this.currentQuery = obj
+      let nomptyValue = true
+      if(this.item.dataFilterList) {
+        for(let df in this.item.dataFilterList) {
+          let dfit = {
+            enabledQueryTypes: this.item.dataFilterList[df].enabledQueryTypes,
+            fieldKey: this.item.dataFilterList[df].fieldKey,
+          }
+          if(this.item.dataFilterList[df].type == 'cust') {
+            dfit.value = this.item.dataFilterList[df].value
+          }else{
+            let tval = null
+            if(typeof this.item.dataFilterList[df].value == 'object' && (this.item.dataFilterList[df].value instanceof Array)) {
+              if(this.item.dataFilterList[df].value.length > 0) {
+                if(this.item.dataFilterList[df].value.length == 1) {
+                  if(this.item.parentType && this.item.parentKey && this.originForm) {
+                    tval = this.originForm[this.item.dataFilterList[df].value[0]]
+                  }
+                }else{
+                  tval = this.forms[this.item.dataFilterList[df].value[this.item.dataFilterList[df].value.length - 1]]
+                }
+              }
+            }else{
+              tval = this.forms[this.item.dataFilterList[df].value]
+            }
+            if((tval == undefined || tval == null || tval == '') &&  this.item.dataFilterList[df].enabledQueryTypes != 'isNull') {
+              nomptyValue = false
+            }else{
+              dfit.value = tval
+            }
+          }
+          obj.conditions.push(dfit)
+        }
+      }
+      if(nomptyValue) {
+      }else{
+        this.searchLoading = false
+      }
+    },
+    getThousandthNumber(num) {
+      let str = ''
+      if(typeof num == 'number' || (typeof num == 'string' && num)) {
+        str = num + ''
+        str = str.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+        if(str.includes('.') == false && this.item.precision > 0) {
+          str += '.'
+          for(let i=0; i < this.item.precision; i++) {
+            str += '0'
+          }
+        }
+      }
+      return str
+    },
+    showThoudsandthHandle (bool) {
+      if(this.item.thoudsandthable && !this.item.disabled) {
+        this.showThoudsandth = bool
+      }
+    },
+    getDisableexpress (type) {
+      let bool = true
+      let color = ""
+      let bgcolor = ''
+      if(this.item.disabled) {
+        if(this.item.expressDisplay) {
+          if(this.item.expressDisplay.backColor || this.item.expressDisplay.textcolor) {
+            bool = false
+            if(this.item.expressDisplay.backColor) {
+              bgcolor = this.item.expressDisplay.backColor
+            }
+            color = this.item.expressDisplay.textcolor
+          }
+          if(this.item.expressDisplay.conditionControl){
+            this.item.expressDisplay.conditionControl.filter(cit => {
+              if(cit.value == this.form[this.item.prop]) {
+                bgcolor = cit.bgcolor
+                color = cit.color
+                bool = false
+              }
+            })
+          }
+        }
+      }
+      if(type == 'show') {
+        if(!this.form[this.item.prop]) {
+          bool = true
+        }
+        return bool
+      }
+      if(type == 'color') {
+        return color
+      }
+      if(type == 'bgcolor') {
+        return bgcolor
+      }
     }
   },
   watch: {
     item: {
-      handler () {
+      handler (newVal, oldVal) {
         this.initItem()
         // 下拉框 单选 自定义选择
         if(this.item.currVal) {
@@ -1359,6 +1870,23 @@ export default {
               }else{
                 this.$emit('validateHandle', {type: 'validate', item: this.item})
               }
+            }
+          }
+        }
+        if(this.item.type == 'htmlEditor'){
+          if(newVal.prop != oldVal.prop) {
+            if($('#' + this.item.prop + '-editor')) {
+              $('#' + this.item.prop + '-editor').html("")
+            }
+            if(this.editor) {
+              this.editor.destroy()
+            }
+            this.initEditor(this.item.prop)
+          }else{
+            if(this.item.disabled) {
+              this.editor.disable()
+            }else{
+              this.editor.enable()
             }
           }
         }
@@ -1399,6 +1927,39 @@ export default {
           }
         }
       }
+    },
+    changeRandom: {
+      handler(newVal, oldVal) {
+        if(newVal > -1) {
+          if(this.item.dataFilterable && !this.isView) {
+            this.getSelectUrlData()
+          }
+        }
+      }
+    },
+    // 被嵌套表格自适应宽判断
+    parentDomWidth: {
+      handler(newVal, oldVal) {
+        if(newVal && newVal > 0) {
+          if(this.item.type == 'tableForm') {
+            if(this.$refs[this.item.prop]) {
+              let tw = 0
+              this.item.tableColumn.filter(ti => {
+                tw += ti.span * 8
+              })
+              let w = this.$refs[this.item.prop].offsetWidth
+              if(w <= 0) {
+                w = (newVal / 24) * (this.item.span)
+              }
+              if(tw < w - 50) {
+                this.item.tableColumn.filter(ti => {
+                  ti.width = ''
+                })
+              }
+            }
+          }
+        }
+      }
     }
   },
   created () {
@@ -1411,6 +1972,19 @@ export default {
     }
     if(this.item.type == 'iconSelect') {
       this.iconToolWidth = this.getWidth(this.item)
+    }
+    if(this.item.type == 'tableForm') {
+      if(this.$refs[this.item.prop]) {
+        let tw = 0
+        this.item.tableColumn.filter(ti => {
+          tw += ti.span * 8
+        })
+        if(tw < this.$refs[this.item.prop].offsetWidth - 50) {
+          this.item.tableColumn.filter(ti => {
+            ti.width = ''
+          })
+        }
+      }
     }
   }
 };
@@ -1430,9 +2004,16 @@ export default {
     display: inline-block;
   }
 }
+.el-upload-list--picture-card{
+  display: inline-block;
+  height: 148px;
+}
 .form-list-upload-img-none {
   .el-upload--picture-card {
     display: none;
+  }
+  .el-upload-list {
+    height: 148px;
   }
 }
 .form-list-upload-file {
@@ -1487,6 +2068,7 @@ export default {
 }
 .jvs-form-item{
   min-height: 32px;
+  position: relative;
   .el-slider, p, .el-input-number, .el-select, .el-date-editor, .form-item-icon-selct, .el-tabs, .el-cascader, .user-info-list{
     flex: 1;
   }
@@ -1496,12 +2078,114 @@ export default {
     }
   }
   .el-input-number.is-disabled{
-    flex: none;
-    width: auto;
+    // flex: none;
+    width: 100%;
     .el-input{
       width: auto;
       .el-input__inner{
         padding-right: 0;
+      }
+    }
+  }
+  .show-thoudsandth-number{
+    .el-input__inner{
+      color: transparent;
+    }
+  }
+  .input-number-Thousandth{
+    position: absolute;
+    left: 16px;
+    font-size: 12px;
+  }
+  .input-number-Thousandth-disabled{
+    left: 0;
+    font-size: 14px;
+  }
+  // 隐藏文本框前置图标
+  .el-input--prefix{
+    .el-input__prefix{
+      display: none;
+    }
+    .el-input__inner{
+      padding-left: 15px;
+    }
+  }
+  // 隐藏禁用状态下placeholder
+  .el-input.is-disabled{
+    font-size: 12px;
+    .el-input__inner::-webkit-input-placeholder{
+      color: transparent;
+    }
+    .el-input__inner::-moz-input-placeholder{
+      color: transparent;
+    }
+    .el-input__inner::-ms-input-placeholder{
+      color: transparent;
+    }
+  }
+  .show-disable.is-disabled{
+    .el-input__inner{
+      font-size: 12px!important;
+      background-color: #F5F7FA!important;
+      border: 1px solid #E4E7ED!important;
+      color: #C0C4CC!important;
+      padding: 0 15px!important;
+    }
+    .el-input__inner::-webkit-input-placeholder{
+      color: #C0C4CC!important;
+    }
+    .el-input__inner::-moz-input-placeholder{
+      color: #C0C4CC!important;
+    }
+    .el-input__inner::-ms-input-placeholder{
+      color: #C0C4CC!important;
+    }
+    .el-input-group__append{
+      display: table-cell!important;
+    }
+  }
+  // p文字
+  .form-item-p{
+    span{
+      display: inline-block;
+      box-sizing: border-box;
+      overflow: hidden;
+      position: relative;
+      padding-left: 10px;
+      height: 28px;
+      i,b{
+        font-weight: normal;
+        font-style: normal;
+      }
+      i{
+        width: 4px;
+        border-radius: 2px;
+        height: 20px;
+        background-color: rgb(52, 113, 255);
+        display: inline-block;
+        line-height: 28px;
+        position: absolute;
+        top: 4px;
+        left: 0;
+      }
+    }
+  }
+  .table-form{
+    .jvs-table{
+      .table-body-box{
+        padding: 0;
+      }
+    }
+  }
+  .user-info-list{
+    .user-info-input-div{
+      height: 28px;
+    }
+  }
+  .el-cascader{
+    .el-input{
+      .el-input__inner{
+        height: 28px!important;
       }
     }
   }
@@ -1516,6 +2200,35 @@ export default {
     .el-upload-list__item:hover{
       .el-icon-close{
         display: none!important;
+      }
+    }
+  }
+  .w-e-toolbar{
+    display: none;
+  }
+  .w-e-text-container{
+    width: 100%;
+    border: 0!important;
+    height: auto!important;
+  }
+  .form-item-icon-selct{
+    .el-input{
+      display: none;
+    }
+  }
+}
+.search-form-item-table{
+  .jvs-table{
+    .search-form{
+      padding: 0!important;
+    }
+    .table-top{
+      padding: 0!important;
+      padding-top: 10px!important;
+    }
+    .table-body-box{
+      .el-table__body-wrapper{
+        height: auto!important;
       }
     }
   }

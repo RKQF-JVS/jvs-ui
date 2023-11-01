@@ -16,6 +16,18 @@ function draw (img, data) {
   const imgData = ctx.getImageData(0, 0, img.width, img.height).data
   // 拼接字符
   join(imgData, img)
+  consoleDraw('%c郭静%c黎铃果%c王莹%c朱小康%c邹琳雲%c高则喜%c骆高林', [
+    'color: #FF3333;font-size: 14px;margin-right: 5px;font-weight: 600;',
+    'color: #ee7700;font-size: 14px;margin-right: 5px;font-weight: 600;',
+    'color: #daa520;font-size: 14px;margin-right: 5px;font-weight: 600;',
+    'color: #228b22;font-size: 14px;margin-right: 5px;font-weight: 600;',
+    'color: #66cdaa;font-size: 14px;margin-right: 5px;font-weight: 600;',
+    'color: #3471FF;font-size: 14px;margin-right: 5px;font-weight: 600;',
+    'color: #BF3EFF;font-size: 14px;margin-right: 5px;font-weight: 600;',
+  ])
+}
+function consoleDraw (str, style) {
+  console.log(str, ...style)
 }
 
 // 把像素数据拼接成字符

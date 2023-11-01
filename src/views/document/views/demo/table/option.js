@@ -1,8 +1,8 @@
 export const tableOption = {
   title: "表格的标题",
   page: true,
-  align: "center",
-  menuAlign: "center",
+  // align: "center",
+  // menuAlign: "center",
   viewBtn: true,
   addBtn: true,
   editBtn: true,

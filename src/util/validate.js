@@ -11,7 +11,7 @@ export function isEmail (s) {
  * @param {*} s
  */
 export function isMobile (s) {
-  return /^1[0-9]{10}$/.test(s)
+  return /^[86|\+86]{0,}1[0-9]{10}$/.test(s)
 }
 
 /**

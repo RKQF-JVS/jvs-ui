@@ -41,3 +41,12 @@ export const GetMenuList = (params) => {
     params: params
   });
 };
+
+// 拖动排序
+export const draggableMenuSort = (jvsAppId, data)=>{
+  return request({
+    url:`/mgr/jvs-design/app/${jvsAppId}/sort`,
+    method:'post',
+    data
+  })
+}

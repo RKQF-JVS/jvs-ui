@@ -27,6 +27,14 @@ export function addMessage(data) {
   });
 }
 
+// 获取消息详情
+ export function getMessageDetail(id) {
+  return request({
+    url: `/mgr/jvs-auth/message/${id}`,
+    method: "get",
+  });
+}
+
 // 发送消息
 export function sendMessage(id) {
   return request({

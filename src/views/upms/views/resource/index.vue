@@ -1,50 +1,157 @@
 <template>
   <div class="content-box">
-    <div class="rescurce">
-      <div class="tablebox">
-        <jvs-table
-          pageheadertitle='菜单管理'
-          refs="multipleTable"
-          :data="tableData"
-          tooltipEffect="dark"
-          :showHeader="true"
-          :loading="tableLoading"
-          :option="tableOption"
-          @search-change="searchChange"
-        >
-        <template slot="menuLeft">
-          <div class="resource-search-form">
-            <jvs-button type="primary" size='mini' icon="el-icon-plus" @click="addMenuHandle" permisionFlag="upms_menu_add">新增一级菜单</jvs-button>
-            <!-- <span class="menu-name-item">菜单名称</span>
-            <el-input v-model="queryParams.name" size="mini" placeholder="请输入菜单名称"></el-input> -->
-          </div>
-          <!-- <jvs-button type="primary" size='mini' @click="addResource" permisionFlag="zi_yuan_guan_lixin_zeng_zi_yuan">新增资源</jvs-button> -->
-        </template>
-       <!-- <template slot="menuRight">
-         <jvs-button type="primary" size='mini' @click="searchChange(queryParams)">查询</jvs-button>
-         <jvs-button size='mini'>清空</jvs-button>
-       </template> -->
-        </jvs-table>
-      </div>
-      <div class="rescurce-tree">
-        <div class="button-list">
-          <jvs-button v-for="(item, key) in terminalList" :type="item.id == currentTerminal ? 'primary' : ''" :key="key" @click="activeHandle(item)">{{item.name}}</jvs-button>
-          <p class="divider-line"></p>
+    <div class="application-list" :key="changeKey">
+      <!-- 应用终端 -->
+      <div class="terminal-check-box">
+        <div class="terminal-title">应用模块</div>
+        <div class="terminal-check-list" v-for="(item, key) in appList" :key="key" >
+          <div class="terminal-node" @click="terminalClick(item)" :style="currentApp.name === item.name ? 'color: #3e78fd;' : ''">{{ item.name }}</div>
+          <span class="custom-tree-node-right">
+            <el-popover
+              popper-class="hover-popver-list"
+              placement="right"
+              width="50"
+              v-model="item.moretool"
+              trigger="click">
+              <ul class="base-type-list">
+                <li v-if="$permissionMatch('upms_menu_add')" @click="addMenuHandle(item)">
+                  <span>添加一级菜单</span>
+                </li>
+              </ul>
+              <i slot="reference" class="el-icon-more iconhover" @click.stop="moreClick(item, 'menu')"></i>
+            </el-popover>
+          </span>
         </div>
-        <div class="treeForm">
-          <treeFrom :treeData="treeData" @addTree="addTree" @editTree="editTree" @deleteTree="deleteTree" @editResourceExplain="editResourceExplain" @serarchTreeItem="serarchTreeItem" />
+      </div>
+      <!-- 一级菜单 -->
+      <div class="terminal-check-box">
+        <div class="terminal-title">一级菜单</div>
+        <div class="terminal-check-list" v-for="(item, key) in menuList" :key="key" >
+          <svg v-if="isSvg(item.extend.menu.icon)" class="icon" aria-hidden="true" style="margin-right:10px;width: 20px;height: 20px;">
+            <use :xlink:href="'#'+item.extend.menu.icon"></use>
+          </svg>
+          <div class="terminal-node" @click="menuClick(item)" :style="currentMenu.name === item.name ? 'color: #3e78fd;' : ''">{{ item.name }}</div>
+          <span class="custom-tree-node-right">
+            <el-popover
+              popper-class="hover-popver-list"
+              placement="right"
+              width="50"
+              v-model="item.moretool"
+              trigger="click">
+              <ul class="base-type-list">
+                <li v-if="$permissionMatch('upms_menu_add') && item.extend.menu.layer < 3" @click="addTree(item, 'menu')">
+                  <span>添加下级菜单</span>
+                </li>
+                <li v-if="$permissionMatch('upms_resource_edit')" @click="editResourceExplain(item, 'resource')">
+                  <span>编辑资源</span>
+                </li>
+                <li v-if="$permissionMatch('upms_explain_edit')" @click="editResourceExplain(item, 'expalin')">
+                  <span>编辑解释</span>
+                </li>
+                <li v-if="$permissionMatch('upms_menu_edit')"  @click="editTree(item, 'menu')">
+                  <span>编辑菜单</span>
+                </li>
+                <li v-if="$permissionMatch('upms_menu_delete') && (!item.children || item.children.length == 0)" @click="deleteTree(item, 'menu')">
+                  <span style="color: #F56C6C;">删除菜单</span>
+                </li>
+              </ul>
+              <i slot="reference" class="el-icon-more iconhover" @click.stop="moreClick(item, 'menu')"></i>
+            </el-popover>
+          </span>
+        </div>
+      </div>
+      <!-- 菜单分组 -->
+      <div class="terminal-check-box">
+        <div class="terminal-title">菜单分组</div>
+        <div class="terminal-check-list" v-for="(item, key) in menuGroupList" :key="key" >
+          <svg v-if="isSvg(item.extend.menu.icon)" class="icon" aria-hidden="true" style="margin-right:10px;width: 20px;height: 20px;">
+            <use :xlink:href="'#'+item.extend.menu.icon"></use>
+          </svg>
+          <div class="terminal-node" @click="menuGroupClick(item)" :style="currentMenuGroup.name === item.name ? 'color: #3e78fd;' : ''">{{ item.name }}</div>
+          <span class="custom-tree-node-right">
+            <el-popover
+              popper-class="hover-popver-list"
+              placement="right"
+              width="50"
+              v-model="item.moretool"
+              trigger="click">
+              <ul class="base-type-list">
+                <li v-if="$permissionMatch('upms_menu_add') && item.extend.menu.layer < 3" @click="addTree(item, 'menuGroup')">
+                  <span>添加下级菜单</span>
+                </li>
+                <li v-if="$permissionMatch('upms_resource_edit')" @click="editResourceExplain(item, 'resource')">
+                  <span>编辑资源</span>
+                </li>
+                <li v-if="$permissionMatch('upms_explain_edit')" @click="editResourceExplain(item, 'expalin')">
+                  <span>编辑解释</span>
+                </li>
+                <li v-if="$permissionMatch('upms_menu_edit')"  @click="editTree(item, 'menuGroup')">
+                  <span>编辑菜单</span>
+                </li>
+                <li v-if="$permissionMatch('upms_menu_delete') && (!item.children || item.children.length == 0)" @click="deleteTree(item, 'menuGroup')">
+                  <span style="color: #F56C6C;">删除菜单</span>
+                </li>
+              </ul>
+              <i slot="reference" class="el-icon-more iconhover" @click.stop="moreClick(item, 'menuGroup')"></i>
+            </el-popover>
+          </span>
+        </div>
+      </div>
+      <!-- 功能模块 -->
+      <div class="terminal-check-box">
+        <div class="terminal-title">功能模块</div>
+        <div class="terminal-check-list" v-for="(item, key) in functionList" :key="key" >
+          <svg v-if="isSvg(item.extend.menu.icon)" class="icon" aria-hidden="true" style="margin-right:10px;width: 20px;height: 20px;">
+            <use :xlink:href="'#'+item.extend.menu.icon"></use>
+          </svg>
+          <div class="terminal-node" @click="functionClick(item)" :style="currentFunction.name === item.name ? 'color: #3e78fd;' : ''">{{ item.name }}</div>
+          <span class="custom-tree-node-right">
+            <el-popover
+              popper-class="hover-popver-list"
+              placement="right"
+              width="50"
+              v-model="item.moretool"
+              trigger="click">
+              <ul class="base-type-list">
+                <li v-if="$permissionMatch('upms_menu_add') && item.extend.menu.layer < 3" @click="addTree(item)">
+                  <span>添加下级菜单</span>
+                </li>
+                <li v-if="$permissionMatch('upms_resource_edit')" @click="editResourceExplain(item, 'resource')">
+                  <span>编辑资源</span>
+                </li>
+                <li v-if="$permissionMatch('upms_explain_edit')" @click="editResourceExplain(item, 'expalin')">
+                  <span>编辑解释</span>
+                </li>
+                <li v-if="$permissionMatch('upms_menu_edit')"  @click="editTree(item, 'function')">
+                  <span>编辑菜单</span>
+                </li>
+                <li v-if="$permissionMatch('upms_menu_delete') && (!item.children || item.children.length == 0)" @click="deleteTree(item, 'function')">
+                  <span style="color: #F56C6C;">删除菜单</span>
+                </li>
+              </ul>
+              <i slot="reference" class="el-icon-more iconhover" @click.stop="moreClick(item, 'function')"></i>
+            </el-popover>
+          </span>
+        </div>
+      </div>
+      <!-- 功能按钮 -->
+      <div class="terminal-check-box">
+        <div class="terminal-title">功能按钮</div>
+        <div class="terminal-check-list" v-for="(item, key) in functionButtonList" :key="key" >
+          <div class="terminal-node">{{ item.name }}</div>
         </div>
       </div>
     </div>
     <el-dialog
       :title="title"
       :visible.sync="dialogVisible"
+      :close-on-click-modal="false"
       :before-close="handleClose">
       <jvs-form v-if="optype=='menu' && dialogVisible" :formData="menuForm" :defalutFormData="menuForm" :option="menuFormOption" @submit="submitMenu">
         <template slot="applyIdForm">
           <el-row>
             <!-- <jvs-button v-for="(item, key) in terminalList" :type="item.id == menuForm.applyId ? 'primary' : ''" :key="key" @click="selectApplyId(item)">{{item.name}}</jvs-button> -->
-            <jvs-button :type="terminalList[index].id == menuForm.applyId ? 'primary' : ''" @click="selectApplyId(terminalList[index])">{{terminalList[index].name}}</jvs-button>
+            <jvs-button :type="currentApp.id == menuForm.applyId ? 'primary' : ''" @click="selectApplyId(terminalList[index])">{{currentApp.name}}</jvs-button>
           </el-row>
         </template>
         <template slot="urlForm">
@@ -123,8 +230,8 @@
         </template>
       </jvs-form>
     </el-dialog>
-    <Resource ref="resource" :resourceVisible="resourceVisible" :apply-id="currentTerminal" :menu-id="menuId" @resourceClose="resourceClose"/>
-    <Explain ref="explain" :explainVisible="explainVisible" :apply-id="currentTerminal" :menu-id="menuId" @explainClose="explainClose"/>
+    <Resource ref="resource" :resourceVisible="resourceVisible" :apply-id="currentApp.id" :menu-id="menuId" @resourceClose="resourceClose"/>
+    <Explain ref="explain" :explainVisible="explainVisible" :apply-id="currentApp.id" :menu-id="menuId" @explainClose="explainClose"/>
   </div>
 </template>
 <script>
@@ -166,7 +273,7 @@ export default {
         pageSize: 20, // 每页显示多少条
       },
       treeData: [],
-      treeDataTemp: [],
+      appList: [],
       dialogVisible: false,
       title: '新增菜单',
       optype: '',
@@ -280,7 +387,17 @@ export default {
       parentError: false,
       currentTerminal: '',
       index: 0,
-      terminalList: []
+      terminalList: [],
+      menuList: [],
+      menuGroupList: [],
+      functionList: [],
+      functionButtonList: [],
+      currentApp: {}, // 当前点击的应用模块
+      currentMenu: {}, // 当前点击的一级菜单
+      currentMenuGroup: {}, // 当前点击的菜单分组
+      currentFunction: {}, // 当前点击的功能模块
+      currentDataId: '',
+      changeKey: 0,
     }
   },
   filters: {},
@@ -291,34 +408,80 @@ export default {
   mounted () { },
   computed: {},
   methods: {
+    moreClick (item, type) {
+    },
+    isSvg(item) {
+      if (item) {
+        return true // item.indexOf("icon-") === -1
+      }
+    },
+    // 功能模块 node 点击
+    functionClick(data) {
+      this.currentFunction = data
+      this.functionButtonList = data.extend.permissions ? [...data.extend.permissions] : []
+      this.currentFunctionButton = ''
+    },
+    // 菜单分组 node 点击
+    menuGroupClick(data) {
+      this.currentMenuGroup = data
+      this.functionList = data.children ? [...data.children] : []
+      this.functionButtonList = []
+      this.currentFunction = {}
+      this.currentFunctionButton = {}
+    },
+    // 一级菜单 node 点击
+    menuClick(data) {
+      this.currentMenu = data
+      this.menuGroupList = data.children ? [...data.children] : []
+      this.functionList = []
+      this.functionButtonList = []
+      this.currentMenuGroup = {}
+      this.currentFunction = {}
+      this.currentFunctionButton = {}
+    },
+    // 应用模块 node 点击
+    terminalClick(data) {
+      this.currentApp = data
+      this.menuList = data.menus ? [...data.menus] : []
+      this.menuGroupList = []
+      this.functionList = []
+      this.functionButtonList = []
+      this.currentMenu = {}
+      this.currentMenuGroup = {}
+      this.currentFunction = {}
+      this.currentFunctionButton = {}
+    },
     getAllAppList() {
       getAppList().then(res => {
         if (res.data && res.data.code == 0) {
-          this.terminalList = [...res.data.data]
-          if(!this.currentTerminal) {
-            this.currentTerminal = this.terminalList[0].id
-          }
+          this.terminalList = res.data.data ? [...res.data.data] : []
+          // if(!this.currentTerminal) {
+          //   this.currentTerminal = this.terminalList[0].id
+          // }
           this.getAllSysntem() // 所有系统列表
         }
       })
     },
     // 新增 菜单
-    addTree (item) {
+    addTree (item, type) {
+      this.currentDataId = item.id
       // if(item.parentId == -1) {
       //   this.addMenuHandle({level: 2, parentId: item.id}, 'add')
       // }else{
       //   this.addMenuHandle({level: 3, parentId: item.id}, 'add')
       // }
-      if(item.extend) {
-        this.addMenuHandle({level: item.extend.layer + 1, parentId: item.id}, 'add')
+      if(item.extend.menu) {
+        this.addMenuHandle({level: item.extend.menu.layer + 1, parentId: item.id}, 'add')
       }
     },
     // 编辑菜单
-    editTree (item) {
-      this.addMenuHandle(item.extend)
+    editTree (item, type) {
+      this.currentDataId = item.parentId
+      this.addMenuHandle(item.extend.menu)
     },
     // 删除菜单
-    deleteTree (item) {
+    deleteTree (item, type) {
+      this.currentDataId = item.parentId
       this.$confirm('此操作将永久删除此数据, 是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -327,7 +490,8 @@ export default {
         deleteMenu(item.id).then(res => {
           if(res.data.code == 0) {
             this.$message.success("删除菜单成功")
-            this.getAllSysntem()
+            // this.getAllSysntem()
+            this.updateData()
           }
         })
       }).catch(() => {
@@ -339,9 +503,8 @@ export default {
       this.getList()
     },
     // 编辑资源或解释
-    editResourceExplain (item) {
-      let data = item.data
-      let type = item.type
+    editResourceExplain (item, type) {
+      let data = item
       this.menuId = data.id
       if (type === 'resource') {
         this.$refs.resource.getResourceList(data.id)
@@ -386,7 +549,7 @@ export default {
       this.menuForm = {}
       this.title = '新增一级菜单'
       this.optype = 'menu'
-      if(row && typeof row == 'object') {
+      if(row && typeof row == 'object' && row.parentId) {
         this.menuForm = row
         if(this.menuForm.parentId == -1) {
           this.menuForm.parentId = null
@@ -456,6 +619,7 @@ export default {
           this.menuForm.parentId = this.pathArr
         }
       }else{
+        this.currentApp = row
         this.menuFormOption.column.filter(item => {
           if(['url', 'parentId', 'newWindow'].indexOf(item.prop) > -1) {
             item.display = false
@@ -573,10 +737,9 @@ export default {
         obj.parentId = obj.parentId[obj.parentId.length - 1]
       }else{
         // obj.parentId = -1
-        obj.parentId = this.currentTerminal
+        obj.parentId = this.currentApp.id
       }
-      // console.log(obj)
-      obj.applyId = this.terminalList[this.index].id
+      obj.applyId = this.currentApp.id
       this.menuFormOption.submitLoading = true
       if(this.title == '编辑菜单') {
         if(!obj.parentId) {
@@ -586,7 +749,8 @@ export default {
           if(res.data.code == 0) {
             this.$message.success('修改菜单成功')
             this.handleClose()
-            this.getAllSysntem()
+            // this.getAllSysntem()
+            this.updateData('edit')
             this.menuFormOption.submitLoading = false
           }
         }).catch(e => {
@@ -598,7 +762,8 @@ export default {
             this.menuFormOption.submitLoading = false
             this.$message.success('添加菜单成功')
             this.handleClose()
-            this.getAllSysntem()
+            // this.getAllSysntem()
+            this.updateData('add')
           }
         }).catch(e => {
           this.menuFormOption.submitLoading = false
@@ -702,17 +867,16 @@ export default {
       //     this.formatTreeOfSelect(this.treeData, 1)
       //   }
       // })
-      const appId = this.currentTerminal
       getAllMenuList().then(res => {
-        if(res.data.code == 0) {
-          this.treeDataTemp = [...res.data.data]
+        if(res.data.code == 0 && res.data.data) {
+          this.appList = [...res.data.data]
           const arr = [...res.data.data].map(item => {
             return { name: item.name, id: item.id }
           })
           this.terminalList = [...arr]
-          if(!this.currentTerminal) {
-            this.currentTerminal = this.terminalList[0].id
-          }
+          // if(!this.currentTerminal) {
+          //   this.currentTerminal = this.terminalList[0].id
+          // }
           let index = 0
           for(let i in res.data.data) {
             if(res.data.data[i].id == this.currentTerminal) {
@@ -722,6 +886,38 @@ export default {
           this.treeData = res.data.data[index].menus
           this.$forceUpdate()
           this.formatTreeOfSelect(this.treeData, 1)
+        }
+      })
+    },
+    // 更新菜单管理数据
+    updateData(type) {
+      getAllMenuList().then(res => {
+        if(res.data.code == 0 && res.data.data) {
+          this.appList = [...res.data.data]
+          this.getCurrentData(this.appList)
+        }
+      })
+    },
+    // 获取当前操作节点对象
+    getCurrentData(data) {
+      data.forEach(item => {
+        if (item.id === this.currentApp.id) {
+          this.menuList = item.menus
+          this.treeData = item.menus
+          this.$forceUpdate()
+          this.formatTreeOfSelect(this.treeData, 1)
+        }
+        if (item.id === this.currentMenu.id) {
+          this.menuGroupList = item.children
+        }
+        if (item.id === this.currentMenuGroup.id) {
+          this.functionList = item.children
+        }
+        if (item.menus) {
+          this.getCurrentData(item.menus)
+        }
+        if (item.children) {
+          this.getCurrentData(item.children)
         }
       })
     },
@@ -807,14 +1003,6 @@ export default {
       this.parentError = bool
       return bool
     },
-    // 切换终端
-    activeHandle (app) {
-      this.currentTerminal = app.id
-      this.index = this.treeDataTemp.findIndex(item => {
-        return app.id === item.id
-      })
-      this.treeData = this.treeDataTemp[this.index].menus
-    },
     // 选择应用
     selectApplyId (item) {
       // this.$set(this.menuForm, 'applyId', item.id)
@@ -823,11 +1011,82 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
+.base-type-list{
+  padding: 0;
+  margin: 0;
+  li{
+    display: flex;
+    align-items: center;
+    margin: 0;
+    //margin-bottom: 10px;
+    height: 32px;
+    line-height: 32px;
+    cursor: pointer;
+    padding: 6px 24px;
+    i{
+      margin-right: 10px;
+      font-size: 14px!important;
+    }
+  }
+  li:hover{
+    background: #F5F7FA;
+  }
+  li:nth-last-of-type(1) {
+    margin-bottom: 0;
+  }
+}
+</style>
+<style lang="scss" scoped>
 .content-box{
+  padding: 20px 30px;
+  background-color: #ffffff;
   // padding-bottom: 80px;
   height: 100%;
   overflow: hidden;
+  .application-list{
+    //height: calc(100vh - 140px);
+    overflow: auto;
+    display: flex;
+    .terminal-check-box{
+      width: 200px;
+      .terminal-title{
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 12px;
+      }
+      .el-checkbox-group{
+        display: flex;
+        flex-direction: column;
+      }
+      .terminal-check-list{
+        position: relative;
+        padding: 6px 0;
+        display: flex;
+        align-items: center;
+        width: 160px;
+        .custom-tree-node-right{
+          display: none;
+          margin-right: 5px;
+        }
+        &:hover{
+          .custom-tree-node-right{
+            position: absolute;
+            cursor: pointer;
+            right: 0;
+            display: block;
+          }
+        }
+        .terminal-node{
+          font-size: 14px;
+          cursor: pointer;
+          &:hover{
+            color: #3e78fd;
+          }
+        }
+      }
+    }
+  }
 }
 .rescurce {
   width: 100%;

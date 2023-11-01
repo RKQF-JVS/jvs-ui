@@ -266,7 +266,13 @@ export default {
         }
       }
      }
-   }
+    }
+    .form-item-p{
+      span{
+        display: flex;
+        align-items: center;
+      }
+    }
   }
 }
 .invite-user-box-mobile{
@@ -350,6 +356,12 @@ export default {
           height: 36px;
           line-height: 36px;
         }
+      }
+    }
+    .form-item-p{
+      span{
+        display: flex;
+        align-items: center;
       }
     }
   }

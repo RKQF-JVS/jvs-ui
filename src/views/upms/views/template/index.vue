@@ -22,6 +22,9 @@
         <jvs-button size="mini" type='text' @click="design(scope.row)">设计模板</jvs-button>
         <jvs-button size="mini" type='text' v-if="scope.row.businessType != 1" @click="delRowHandle(scope.row)">删除</jvs-button>
       </template>
+      <template slot="createBy" slot-scope="scope">
+        <el-tag v-if="scope.row.createBy" size="mini">{{ scope.row.createBy }}</el-tag>
+      </template>
       <template slot="roleName" slot-scope="scope">
         {{ scope.row.roleName && scope.row.roleName.join(",") }}
       </template>
@@ -31,6 +34,7 @@
       :title="title"
       v-if="dialogVisible"
       :visible.sync="dialogVisible"
+      :close-on-click-modal="false"
       :before-close="handleClose">
       <jvs-form :option="formOption" :formData="form" @submit="submitHandle"></jvs-form>
     </el-dialog>
@@ -40,6 +44,7 @@
       :fullscreen="true"
       append-to-body
       class="template-design-dialog"
+      :close-on-click-modal="false"
       @opened="initEditor"
     >
       <titlePageHeader :title="rowData && rowData.name || ''" @save="saveHandle" @close="designClose"></titlePageHeader>
@@ -109,8 +114,8 @@ export default {
       },
       option: {
         cancal: false,
-        align: 'center',
-        menuAlign: 'center',
+        // align: 'center',
+        // menuAlign: 'center',
         showOverflow: true,
         search: true,
         page: true,
@@ -160,6 +165,7 @@ export default {
           },
           {
             label: "创建人",
+            slot: true,
             prop: "createBy"
           },
           {
@@ -395,7 +401,7 @@ export default {
           }else{
             _this.contentValidate = true
           }
-        } 
+        }
       }
       _this.editor.config.onchange = function (newHtml) {
         if(_this.rowData) {
@@ -405,7 +411,7 @@ export default {
           }else{
             _this.contentValidate = true
           }
-        } 
+        }
       }
       _this.editor.create()
       if(_this.rowData && _this.rowData.type != 1 && _this.rowData.content) {

@@ -120,8 +120,8 @@ export default {
       if(['normalForm', 'detailForm', 'flowable'].indexOf(formDesign.formType) > -1) {
         if(formDesign.formdata[0].formsetting && formDesign.formdata[0].formsetting.dataEchoRequest) {
           let tp = JSON.parse(JSON.stringify(formDesign.formdata[0].formsetting.dataEchoRequest))
-          if(this.$store.state.labelValue && this.$store.state.labelValue.requestContentType) {
-            tp.requestContentType = this.$store.state.labelValue.requestContentType[tp.requestContentType]
+          if(this.$store.getters.labelValue && this.$store.getters.labelValue.requestContentType) {
+            tp.requestContentType = this.$store.getters.labelValue.requestContentType[tp.requestContentType]
           }
           if(tp && tp.url) {
             sendMyRequire(tp, initData).then(res => {
@@ -237,8 +237,8 @@ export default {
             tp = JSON.parse(JSON.stringify(this.data.viewJson.formdata[0].formsetting.dataSubmissionRequest))
           }
         }
-        if(this.$store.state.labelValue && this.$store.state.labelValue.requestContentType) {
-          tp.requestContentType = this.$store.state.labelValue.requestContentType[tp.requestContentType]
+        if(this.$store.getters.labelValue && this.$store.getters.labelValue.requestContentType) {
+          tp.requestContentType = this.$store.getters.labelValue.requestContentType[tp.requestContentType]
         }
         if(tp && tp.url) {
           sendMyRequire(tp, form).then(res => {

@@ -16,8 +16,9 @@
       title="新增"
       v-if="dialogVisible"
       :visible.sync="dialogVisible"
+      :close-on-click-modal="false"
       :before-close="handleClose">
-      
+
     </el-dialog>
   </div>
 </template>
@@ -38,8 +39,8 @@ export default {
         addBtn: true,
         editBtn: true,
         viewBtn: true,
-        align: "center",
-        menuAlign: "center",
+        // align: "center",
+        // menuAlign: "center",
         page: true,
         search: true,
         showOverflow: true,

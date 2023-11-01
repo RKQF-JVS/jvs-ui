@@ -1,8 +1,8 @@
 import Vue from "vue"
 export const tableOption={
   page: true,
-  align: 'center',
-  menuAlign: 'center',
+  // align: 'center',
+  // menuAlign: 'center',
   viewBtn: false,
   addBtn: false,
   editBtn: false,
@@ -15,6 +15,7 @@ export const tableOption={
   labelWidth: 'auto',
   submitBtnText: '查询',
   cancal: false,
+  menuWidth: '215px',
   column: [
     // {
     //   label: '基本信息设置',
@@ -51,20 +52,17 @@ export const tableOption={
       }
     },
     {
-      label: '登录域名',
-      prop: 'loginDomain',
+      label: '超级管理员',
+      prop: 'adminUserName',
+      display: false,
       span: 16,
-      prepend: 'https://',
-      append: '.jvs.bctools.cn',
-      rules: [
-        { required: false, message: '请输入登录域名', trigger: 'blur' }
-      ],
-      tips: {
-        position: 'bottom',
-        text: '请填写2-15位英文字符'
-      },
-      regularExpression: '^[a-z]{2,15}$',
-      regularMessage: '格式错误'
+    },
+    {
+      label: '管理员头像',
+      prop: 'adminUserImg',
+      display: false,
+      slot: true,
+      span: 16,
     },
     {
       label: '状态',
@@ -104,6 +102,28 @@ export const tableOption={
       hide: true
     },
     {
+      label: '管理员',
+      prop: 'adminUserAccount',
+      tips: {
+        position: 'bottom',
+        text: '请填写该租户管理员账号'
+      },
+      rules: [
+        { required: true, message: '请填写该租户管理员账号', trigger: 'blur' }
+      ],
+      span: 16,
+      hide: true
+    },
+    {
+      label: '用户初始密码',
+      prop: 'defaultPassword',
+      span: 16,
+      hide: true,
+      rules: [
+        { required: true, message: '请填写用户初始密码', trigger: 'blur' }
+      ],
+    },
+    {
       label: '默认首页',
       prop: 'defaultIndexUrl',
       span: 16,
@@ -111,7 +131,8 @@ export const tableOption={
       tips: {
         position: 'bottom',
         text: '用户登录后，访问的第一个页面，默认情况为动态配置页面。可根据业务系统选择不一样的首页地址。具体填写请联系运维部署人员。'
-      }
+      },
+      display: false
     },
     {
       label: '登录类型',
@@ -166,14 +187,16 @@ export const tableOption={
       label: '页面配置',
       type: 'title',
       hide: true,
-      span: 24
+      span: 24,
+      display: false
     },
     {
       label: 'ICON',
       prop: 'icon',
       span: 24,
       hide: true,
-      formSlot: true
+      formSlot: true,
+      display: false
     },
     {
       label: 'LOGO',
@@ -181,6 +204,7 @@ export const tableOption={
       hide: true,
       formSlot: true,
       span: 24,
+      display: false
     },
     {
       label: '背景图',
@@ -188,6 +212,7 @@ export const tableOption={
       hide: true,
       formSlot: true,
       span: 24,
+      display: false
     },
     {
       label: '登录模板',

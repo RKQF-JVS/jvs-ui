@@ -7,13 +7,15 @@
         :page="page"
         :option="option"
         :data="tableData"
+        :loading="tableLoading"
         @on-load="getList"
+        @search-change="searchChange"
       >
         <template slot="menuLeft">
           <jvs-button type="primary" size="mini" @click="dialogVisibleShow('add', null, null, 'post')" permisionFlag="upms_post_add">添加岗位</jvs-button>
         </template>
         <template slot="menu" slot-scope="scope">
-          <jvs-button type="text" size="mini" permisionFlag="upms_post_remove" @click="delUSerPost(scope.row)">移除</jvs-button>
+          <jvs-button type="text" size="mini" v-if="jobId !== ''" permisionFlag="upms_post_remove" @click="delUSerPost(scope.row)"><span style="color: #F56C6C;">移除</span></jvs-button>
         </template>
         <template slot="roleName" slot-scope="scope">
           <el-tag v-for="ritem in scope.row.roleName" :key="ritem" style="margin-right:5px;">{{ritem}}</el-tag>
@@ -23,7 +25,7 @@
         </template>
       </jvs-table>
       <div class="treeBox post-treeBox">
-        <div :class="{'treeBox-title': true, 'treeBox-title-check': !postId}" @click="queryAllHandle">全部</div>
+        <div :class="{'treeBox-title': true, 'treeBox-title-check': !jobId}" @click="queryAllHandle">全部</div>
         <el-tree
           ref="postTree"
           :data="postData"
@@ -114,7 +116,7 @@
                   :collapse-tags="true"
                 >
                 </el-cascader>
-                <el-select v-model="postIds" placeholder="请选择岗位" size="mini" multiple :collapse-tags="true" style="margin-left:10px;">
+                <el-select v-model="jobIds" placeholder="请选择岗位" size="mini" multiple :collapse-tags="true" style="margin-left:10px;">
                   <el-option
                     v-for="item in postData"
                     :key="'customize-select-option'+item.id"
@@ -164,12 +166,19 @@
         </jvs-form>
       </div>
     </el-dialog>
-    <userSelector ref="userSelector" :selectable="true" @submit="addCheckUSer"></userSelector>
+    <userSelector
+      ref="userSelector"
+      :userEnable="true"
+      :currentActiveName="'user'"
+      :selectable="true"
+      :dialogTitle="'人员选择'"
+      @submit="addCheckUSer"
+    />
   </div>
 </template>
 <script>
 import { tableOption, userpostOption } from './option'
-import { getPostList, addPost, editPost, delPost, getUserByPostId, editUserJob, removeUserByJob } from './api'
+import { getPostList, addPost, editPost, delPost, getUserByJobId, editUserJob, removeUserByJob } from './api'
 import {getDeptList } from '../department/api'
 import dataPermision from '../dataPermision/index'
 import userSelector from '@/components/basic-assembly/userSelector'
@@ -186,6 +195,7 @@ export default {
       },
       option: tableOption,
       tableData: [],
+      tableLoading: false,
       rowData: {},
       title: '新增',
       method: '',
@@ -205,9 +215,9 @@ export default {
       selectOneData: null,
       lastPost: null,
       deptIds: [],
-      postIds: [],
+      jobIds: [],
       postData: [], // 岗位列表
-      postId: undefined, // 当前选中岗位id
+      jobId: '', // 当前选中岗位id
       postLoading: false,
       defaultPostProps: {
         children: 'children',
@@ -247,18 +257,27 @@ export default {
   methods: {
     // 获取数据
     getList (page) {
+      this.tableLoading = true
       let obj={
         size: this.page.pageSize,
         current: this.page.currentPage,
-        postId: this.postId
+        jobId: this.jobId
       }
-      getUserByPostId(obj).then(res => {
+      getUserByJobId(Object.assign(obj, this.queryParams)).then(res => {
         if (res.data.code==0) {
           this.tableData=res.data.data.records
           this.page.currentPage=res.data.data.current
           this.page.total=res.data.data.total
         }
+        this.tableLoading = false
+      }).catch(err => {
+        this.tableLoading = false
       })
+    },
+    // 搜素回调
+    searchChange (form) {
+      this.queryParams = form
+      this.getList()
     },
     // 岗位更多
     morePost (item) {
@@ -288,12 +307,12 @@ export default {
     // 岗位选中
     postHandleClick (data, node, dom) {
       this.selectOneData = data
-      if(this.postId == data.id) {
-        this.postId = ""
-        this.$refs.postTree.setCurrentKey(null)
-        this.$forceUpdate()
+      if(this.jobId == data.id) {
+        // this.jobId = ""
+        // this.$refs.postTree.setCurrentKey(null)
+        // this.$forceUpdate()
       }else{
-        this.postId = data.id
+        this.jobId = data.id
       }
       this.getList()
     },
@@ -321,7 +340,7 @@ export default {
             if(obj.customScope.startsWith('{')) {
               let temp = JSON.parse(obj.customScope)
               this.deptIds = temp.deptIds
-              this.postIds = temp.jobIds
+              this.jobIds = temp.jobIds
             }
           }
           this.postForm = obj
@@ -356,7 +375,7 @@ export default {
       this.dialogVisible = false
       this.deptIds = []
       this.customizeList = []
-      this.postIds = []
+      this.jobIds = []
     },
     // 获取路径结果
     getDeptPath (val, list) {
@@ -393,7 +412,7 @@ export default {
     // 提交 岗位
     postSubmitHandle (form) {
       let obj = JSON.parse(JSON.stringify(form))
-      let custObj = {deptIds: this.deptIds, jobIds: this.postIds}
+      let custObj = {deptIds: this.deptIds, jobIds: this.jobIds}
       obj.customScope = JSON.stringify(custObj)
       this.postFormOption.submitLoading = true
       if(this.method == 'add') {
@@ -440,12 +459,12 @@ export default {
     addUser (data) {
       if(data) {
         data.moretool = false
-        this.postId = data.id
+        this.jobId = data.id
       }
       this.$refs.userSelector.openDialog()
     },
     addCheckUSer (list) {
-      editUserJob(this.postId, list).then(res => {
+      editUserJob(this.jobId, list).then(res => {
         if(res.data.code == 0) {
           this.$message.success('添加成员成功')
           this.$refs.userSelector.closeDialog()
@@ -454,7 +473,7 @@ export default {
       })
     },
     queryAllHandle () {
-      this.postId = ""
+      this.jobId = ""
       this.$refs.postTree.setCurrentKey(null)
       this.$forceUpdate()
       this.getList()
@@ -470,9 +489,11 @@ export default {
     display: flex;
     align-items: center;
     margin: 0;
-    margin-bottom: 10px;
+    //margin-bottom: 10px;
+    height: 32px;
+    line-height: 32px;
     cursor: pointer;
-    padding: 5px 10px;
+    padding: 6px 24px;
     i{
       margin-right: 10px;
       font-size: 14px!important;
@@ -506,15 +527,17 @@ export default {
   .treeBox {
     position: absolute;
     //top: 94px;
-    top: 72px;
+    //top: 132px;
+    top: 0;
     left: 0;
     width: 250px;
     //height: calc(100% - 94px);
-    height: calc(100% - 72px);
+    //height: calc(100% - 132px);
+    height: calc(100% - 10px);
     overflow: hidden;
     overflow-y: auto;
     padding-left: 20px;
-    border-right: 1px solid #DCDFE6;
+    //border-right: 1px solid #DCDFE6;
     padding-top: 20px;
     padding-bottom: 20px;
     box-sizing: border-box;
@@ -560,6 +583,7 @@ export default {
     }
     .el-tree-node{
       .el-tree-node__content{
+        padding-left: 6px!important;
         width: 100%;
       }
     }
@@ -571,6 +595,10 @@ export default {
   }
   .treeBox::-webkit-scrollbar{
     display: none;
+  }
+  .jvs-table-top{
+    width: calc(100% - 250px);
+    margin-left: 250px;
   }
   .el-table{
     width: calc(100% - 250px);

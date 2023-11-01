@@ -3,7 +3,7 @@ import request from "@/router/axios";
 // 获取列表
 export function getTreeList(params) {
   return request({
-    url: `/mgr/jvs-auth/tree/list`,
+    url: `/mgr/jvs-design/platform/app/tree/list`,
     method: "get",
     params: params
   });

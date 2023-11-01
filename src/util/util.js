@@ -1,6 +1,7 @@
 import {validatenull} from './validate'
 import request from '@/router/axios'
 import * as CryptoJS from'crypto-js'
+import SnowflakeId from "snowflake-id";
 
 // 表单序列化
 export const serialize = data => {
@@ -248,16 +249,34 @@ export const findParent = (menu, id) => {
 }
 
 /**
- * 
+ *
  * 加载SVG的图标
  *
  */
- export const loadSVGStyle = url => {
-  const sct = document.createElement('script')
-  sct.src = url
-  const head = document.getElementsByTagName('head')[0]
-  head.appendChild(sct)
-  // document.body.appendChild(sct)
+//  export const loadSVGStyle = url => {
+//   const sct = document.createElement('script')
+//   sct.src = url
+//   const head = document.getElementsByTagName('head')[0]
+//   head.appendChild(sct)
+//   // document.body.appendChild(sct)
+// }
+export const loadSVGStyle = (url,type) => {
+  if(type == 'js'){
+    const sct = document.createElement('script')
+    sct.src = window.location.origin+url
+    const head = document.getElementsByTagName('head')[0]
+    head.appendChild(sct)
+    document.body.appendChild(sct)
+  }else{
+    const sct = document.createElement('link')
+    sct.setAttribute("rel", "stylesheet");
+    sct.setAttribute("type", "text/css");
+    sct.setAttribute("href", window.location.origin+url);
+    const head = document.getElementsByTagName('head')[0]
+    head.appendChild(sct)
+    document.body.appendChild(sct)
+    // document.getElementsByTagName('head')[0].appendChild(sct)
+  }
 }
 
 /**
@@ -360,7 +379,7 @@ export const noEmptyOfObject = (obj) => {
     }else{
       let temp = {}
       for(let i in obj) {
-        if(obj[i] || obj[i] == false || obj[i] == 0) {
+        if(obj[i] || obj[i] === false || obj[i] === 0) {
           temp[i] = obj[i]
         }
       }
@@ -377,4 +396,21 @@ export const compare = (arg) => {
   return function(a, b) {
     return b[arg] - a[arg];
   }
+}
+
+/**
+ * 雪花算法生成唯一ID
+ */
+ export const guid = num => {
+  const id= new SnowflakeId();
+  return id.generate();
+};
+
+export function useOptionChain(target) {
+  return new Proxy(target, {
+      get:  (target, propKey)=> {
+          const proKeyArr = propKey.split('?.')
+          return  proKeyArr.reduce((a,b)=>a?.[b],target)
+      }
+  })
 }

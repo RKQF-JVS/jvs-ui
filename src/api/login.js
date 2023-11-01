@@ -2,7 +2,11 @@ import request from "@/router/axios";
 import store from "@/store";
 import {scope, client_id, client_secret, grant_type, ETag} from '@/const/const'
 
-export const loginByUsername = (username, password, code, randomStr) => {
+export const loginByUsername = (username, password, code, randomStr, app_client_id, call_back_url) => {
+  let pam = {username, password, grant_type, scope, client_id, client_secret}
+  if(app_client_id && call_back_url) {
+    pam = Object.assign(pam, {app_client_id: app_client_id}, {call_back_url: call_back_url})
+  }
   return request({
     url: `/auth/oauth/token`,
     headers: {
@@ -10,7 +14,7 @@ export const loginByUsername = (username, password, code, randomStr) => {
       ETag: ETag
     },
     method: "post",
-    params: { username, password, grant_type, scope, client_id, client_secret }
+    params: pam
   });
 };
 
@@ -38,7 +42,7 @@ export const refreshToken = (refresh_token, tenantId) => {
 // ico、title、登录背景、logo
 export function getDomain(params) {
   return request({
-    url: "/api/domain",
+    url: "/auth/api/domain",
     method: "get",
     headers: {
       isToken: false
@@ -203,7 +207,11 @@ export function getBulletin(appKey) {
 export function getCanLogin() {
   return request({
     url: `/auth/just`,
-    method: "get"
+    method: "get",
+    headers: {
+      isToken: false,
+    },
+    params: { client_id }
   });
 }
 
@@ -211,7 +219,8 @@ export function getCanLogin() {
 export const getOffLoginQcode = (uuid) => {
   return request({
     url: `/auth/wx/qr/code/login/${uuid}`,
-    method: "get"
+    method: "get",
+    params: { client_id }
   });
 }
 
@@ -220,5 +229,17 @@ export const checkQrcodeState = (uuid) =>{
   return request({
     url: `/auth/wx/qr/code/check/${uuid}`,
     method: "get"
+  });
+}
+
+// 获取钉钉扫码相关信息
+export function getInfoByLoginType(params) {
+  return request({
+    url: `/auth/just/config`,
+    method: "get",
+    headers: {
+      isToken: false,
+    },
+    params: Object.assign(params, {client_id: client_id})
   });
 }

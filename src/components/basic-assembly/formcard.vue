@@ -3,7 +3,7 @@
     <el-tabs :class="{'no-data-tab': (!tabData || tabData.length == 0)}" v-model="activeName" type="card" editable @edit="handleTabsEdit">
       <el-tab-pane
         v-for="(item, index) in tabData"
-        :key="item.name"
+        :key="item.name+'-tab-pane'"
         :label="item.title"
         :name="item.name"
       >
@@ -46,6 +46,7 @@
                   :departmentList="departmentList"
                   :postList="postList"
                   :resetRadom="resetRadom"
+                  :designId="designId"
                   @formChange="formChange"
                 />
               </el-form-item>
@@ -72,6 +73,7 @@
                     :departmentList="departmentList"
                     :postList="postList"
                     :resetRadom="resetRadom"
+                    :designId="designId"
                   />
                   <!-- 自定义列插槽 -->
                   <div v-if="it.formSlot">
@@ -121,6 +123,7 @@
                       :departmentList="departmentList"
                       :postList="postList"
                       :resetRadom="resetRadom"
+                      :designId="designId"
                     />
                     <!-- 自定义列插槽 -->
                     <div v-if="itc.formSlot">
@@ -212,7 +215,10 @@ export default {
     },
     resetRadom: {
       type: Number
-    }
+    },
+    designId: {
+      type: String
+    },
   },
   data() {
     return {
@@ -241,6 +247,11 @@ export default {
     handleTabsEdit(targetName, action) {
       if (action === 'add') {
         let newTabName = ++this.tabIndex + '';
+        this.tabData.filter(item => {
+          if(item.name == newTabName) {
+            newTabName = 'add' + newTabName
+          }
+        })
         this.tabData.push({
           title: this.formItem.label ? (this.formItem.label + (this.tabData.length+1)) : ('表单卡片' + (this.tabData.length+1) ),
           name: newTabName

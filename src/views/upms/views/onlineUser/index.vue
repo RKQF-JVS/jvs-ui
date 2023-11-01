@@ -9,25 +9,32 @@
         @on-load="getList"
       >
         <template slot="menu" slot-scope="scope">
-          <jvs-button type="text" size="mini" permisionFlag="" @click="outUSerHandle(scope.row)">强制退出</jvs-button>
+          <jvs-button type="text" size="mini" permisionFlag="" @click="handleView(scope.row)">查看</jvs-button>
+          <jvs-button type="text" size="mini" permisionFlag="" @click="outUSerHandle(scope.row)"><span style="color: #F56C6C;">结束会话</span></jvs-button>
         </template>
         <template slot="headImg" slot-scope="scope">
-          <img v-if="scope.row && scope.row.userDto && scope.row.userDto.headImg" :src="scope.row.userDto.headImg" style="display:inline-block;width:40px;height:40px;border-radius:50%;overflow:hidden;">
+          <img v-if="scope.row && scope.row.additionalInformation && scope.row.additionalInformation.userDto && scope.row.additionalInformation.userDto.headImg" :src="scope.row.additionalInformation.userDto.headImg" style="display:inline-block;width:40px;height:40px;border-radius:50%;overflow:hidden;">
         </template>
         <template slot="realName" slot-scope="scope">
-          <span v-if="scope.row && scope.row.userDto && scope.row.userDto.realName" >{{scope.row.userDto.realName}}</span>
+          <span v-if="scope.row && scope.row.additionalInformation && scope.row.additionalInformation.userDto && scope.row.additionalInformation.userDto.realName" >{{scope.row.additionalInformation.userDto.realName}}</span>
         </template>
         <template slot="email" slot-scope="scope">
-          <span v-if="scope.row && scope.row.userDto && scope.row.userDto.email" >{{scope.row.userDto.email}}</span>
+          <span v-if="scope.row && scope.row.additionalInformation && scope.row.additionalInformation.userDto && scope.row.additionalInformation.userDto.email" >{{scope.row.additionalInformation.userDto.email}}</span>
+        </template>
+        <template slot="expiration" slot-scope="scope">
+          <span v-if="scope.row && scope.row.additionalInformation && scope.row.additionalInformation.userDto && scope.row.additionalInformation.userDto.expiration" >{{getFormatTime(scope.row.additionalInformation.userDto.expiration)}}</span>
         </template>
         <template slot="phone" slot-scope="scope">
-          <span v-if="scope.row && scope.row.userDto && scope.row.userDto.phone" >{{scope.row.userDto.phone}}</span>
+          <span v-if="scope.row && scope.row.additionalInformation && scope.row.additionalInformation.userDto && scope.row.additionalInformation.userDto.phone" >{{scope.row.additionalInformation.userDto.phone}}</span>
         </template>
         <template slot="ip" slot-scope="scope">
-          <span v-if="scope.row && scope.row.userDto && scope.row.userDto.ip" >{{scope.row.userDto.ip}}</span>
+          <span v-if="scope.row && scope.row.additionalInformation && scope.row.additionalInformation.userDto && scope.row.additionalInformation.userDto.ip" >{{scope.row.additionalInformation.userDto.ip}}</span>
         </template>
         <template slot="userAgent" slot-scope="scope">
-          <span v-if="scope.row && scope.row.userDto && scope.row.userDto.userAgent">{{scope.row.userDto.userAgent}}</span>
+          <span v-if="scope.row && scope.row.additionalInformation && scope.row.additionalInformation.userDto && scope.row.additionalInformation.userDto.userAgent">{{scope.row.additionalInformation.userDto.userAgent}}</span>
+        </template>
+        <template slot="clientName" slot-scope="scope">
+          <span v-if="scope.row && scope.row.additionalInformation && scope.row.additionalInformation.userDto && scope.row.additionalInformation.userDto.clientName">{{scope.row.additionalInformation.userDto.clientName}}</span>
         </template>
       </jvs-table>
       <div class="treeBox">
@@ -50,9 +57,55 @@
         </el-tree>
       </div>
     </div>
+    <el-dialog
+      title="详情"
+      :visible.sync="dialogVisible"
+      :close-on-click-modal="false"
+      :before-close="handleClose">
+      <el-form v-if="formData" label-width="80px" :model="formData">
+        <el-form-item label="头像">
+          <img v-if="formData.headImg" :src="formData.headImg" style="display:inline-block;width:40px;height:40px;border-radius:50%;overflow:hidden;" alt="">
+        </el-form-item>
+        <el-form-item label="账号">
+          {{formData.accountName}}
+        </el-form-item>
+        <el-form-item label="名称">
+          {{formData.realName}}
+        </el-form-item>
+        <el-form-item label="手机号">
+          {{formData.phone}}
+        </el-form-item>
+        <el-form-item label="登录类型">
+          {{formData.loginType}}
+        </el-form-item>
+        <el-form-item label="设备">
+          {{formData.userAgent}}
+        </el-form-item>
+        <el-form-item label="岗位">
+          {{formData.jobName}}
+        </el-form-item>
+        <el-form-item label="部门">
+          {{formData.deptName}}
+        </el-form-item>
+        <el-form-item label="职工编号">
+          {{formData.employeeNo}}
+        </el-form-item>
+<!--        <el-form-item label="有效时间">-->
+<!--          {{formData.expiration ? getFormatTime(formData.expiration) : ''}}-->
+<!--        </el-form-item>-->
+        <el-form-item label="过期时间">
+          {{(formData.refreshToken && formData.refreshToken.expiration) ? getFormatTime(formData.refreshToken.expiration) : ''}}
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button size="mini" @click="dialogVisible = false">取 消</el-button>
+        <el-button size="mini" type="primary" @click="dialogVisible = false">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 <script>
+import moment from 'moment'
 import { tableOption } from './option'
 import { getAppList, getUserByAppId, outUser} from './api'
 export default {
@@ -60,6 +113,8 @@ export default {
   components: {},
   data () {
     return {
+      formData: {},
+      dialogVisible: false,
       queryParams: {},
       option: tableOption,
       tableData: [],
@@ -78,6 +133,10 @@ export default {
     this.getAppTree()
   },
   methods: {
+    // 查看数据 弹窗关闭
+    handleClose() {
+      this.dialogVisible = false
+    },
     // 获取数据
     getList (page) {
       if(this.appid) {
@@ -114,6 +173,17 @@ export default {
       }
       this.getList()
     },
+    // 获取时间
+    getFormatTime(time) {
+      return moment(time).format('YYYY-MM-DD HH:mm:ss')
+    },
+    // 查看详情
+    handleView(obj) {
+      this.dialogVisible = true
+      this.formData = JSON.parse(JSON.stringify(obj.additionalInformation.userDto))
+      this.formData.expiration = obj.expiration
+      this.formData.refreshToken = obj.refreshToken
+    },
     // 强制退出
     outUSerHandle (row) {
       this.$confirm("是否强制退出该用户？", '提示', {
@@ -121,7 +191,7 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        outUser(row.access_token).then(res => {
+        outUser(row.value).then(res => {
           if(res.data.code == 0) {
             this.$message.success('该用户成功退出')
             this.getList()
@@ -140,9 +210,11 @@ export default {
     display: flex;
     align-items: center;
     margin: 0;
-    margin-bottom: 10px;
+    //margin-bottom: 10px;
+    height: 32px;
+    line-height: 32px;
     cursor: pointer;
-    padding: 5px 10px;
+    padding: 6px 24px;
     i{
       margin-right: 10px;
       font-size: 14px!important;

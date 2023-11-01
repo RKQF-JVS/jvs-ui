@@ -48,8 +48,8 @@ export default {
         menu: false,
         page: true,
         canncal: false,
-        align: 'center',
-        menuAlign: 'center',
+        // align: 'center',
+        // menuAlign: 'center',
         search: true,
         cancal: false,
         showOverflow: true,
@@ -107,8 +107,8 @@ export default {
       accessTypeOption: {
         addBtn: false,
         menu: false,
-        align: 'center',
-        menuAlign: 'center',
+        // align: 'center',
+        // menuAlign: 'center',
         column: [
           {
             label: 'select_type',

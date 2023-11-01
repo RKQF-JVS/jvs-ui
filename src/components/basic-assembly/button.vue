@@ -75,7 +75,7 @@ export default {
     return {
       defaultSet: {
         size: 'mini', // 尺寸
-        type: '', // 类型
+        type: 'default', // 类型
         plain: false, // 	是否朴素按钮
         round: false, // 是否圆角按钮
         circle: false, // 是否圆形按钮

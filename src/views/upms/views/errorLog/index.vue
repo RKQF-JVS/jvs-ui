@@ -17,12 +17,13 @@
       </template>
     </jvs-table>
     <el-dialog
-      title="错误详情"
+      title="详情信息"
       fullscreen
       class="form-fullscreen-dialog"
       append-to-body
       v-if="dialogVisible"
       :visible.sync="dialogVisible"
+      :close-on-click-modal="false"
       :before-close="handleClose">
       <jvs-form style="padding: 0 160px;" :option="formOption" :formData="rowData">
         <template slot="parametersForm">
@@ -80,8 +81,8 @@ export default {
         editBtn: false,
         viewBtn: false,
         delBtn: false,
-        align: 'center',
-        menuAlign: 'center',
+        // align: 'center',
+        // menuAlign: 'center',
         search: true,
         page: true,
         cancal: false,
@@ -89,7 +90,7 @@ export default {
           {
             label: '服务名',
             prop: 'businessName',
-            span: 6,
+            searchSpan: 8,
             search: true
           },
           {
@@ -102,6 +103,12 @@ export default {
             slot: true
           },
           {
+            label: '操作人',
+            prop: 'userName',
+            searchSpan: 8,
+            search: true,
+          },
+          {
             label: '方法名',
             prop: 'methodName'
           },
@@ -111,15 +118,17 @@ export default {
           },
           {
             label: '终端',
-            prop: 'clientId'
+            prop: 'clientName'
           },
           {
             label: '请求ip地址',
             prop: 'ip'
           },
           {
-            label: 'tid',
-            prop: 'tid'
+            label: 'TID',
+            prop: 'tid',
+            searchSpan: 8,
+            search: true,
           },
           {
             label: '错误时间',
@@ -137,7 +146,7 @@ export default {
             search: true,
             clearable: false,
             hide: true,
-            span: 8,
+            searchSpan: 9,
           },
         ]
       },
@@ -155,6 +164,14 @@ export default {
           {
             label: '功能名',
             prop: 'functionName'
+          },
+          {
+            label: '操作人',
+            prop: 'userName'
+          },
+          {
+            label: '终端',
+            prop: 'clientName'
           },
           {
             label: '开始时间',
@@ -290,7 +307,7 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-::v-deep.oprationlog-manage{
+/deep/.oprationlog-manage{
   .el-col-6{
     width: auto;
   }

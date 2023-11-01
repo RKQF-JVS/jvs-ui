@@ -13,11 +13,11 @@
       @delRow="delRowHandle"
     >
       <template slot="menuLeft">
-        <jvs-button size="mini" type="primary" icon="el-icon-plus" @click="addPage('add')">新增</jvs-button>
-        <jvs-button size="mini" type="primary" icon="el-icon-plus" @click="addPageByMode('add')">从模板新增</jvs-button>
+<!--        <jvs-button size="mini" type="primary" icon="el-icon-plus" @click="addPage('add')">新增</jvs-button>-->
+<!--        <jvs-button size="mini" type="primary" icon="el-icon-plus" @click="addPageByMode('add')">从模板新增</jvs-button>-->
       </template>
       <template slot="menu" slot-scope="scope">
-        <jvs-button size="mini" type="text" @click="addPage('edit', scope.row)">编辑</jvs-button>
+<!--        <jvs-button size="mini" type="text" @click="addPage('edit', scope.row)">编辑</jvs-button>-->
         <jvs-button size="mini" type="text" @click="addPage('view', scope.row)">查看</jvs-button>
         <jvs-button size="mini" type="text" v-if="!scope.row.isDeploy" @click="handlePublish(scope.row)">发布</jvs-button>
         <jvs-button size="mini" type="text" @click="handlePublishToTep(scope.row)" permisionFlag="page_application_deploy_template">发布到模板</jvs-button>
@@ -36,6 +36,7 @@
       append-to-body
       :modal="false"
       :class="{'no-header-dialog-my': false}"
+      :close-on-click-modal="false"
     >
       <div v-if="designVisible">
         <project-dialog @addByTemplate="addByTemplate"></project-dialog>
@@ -46,6 +47,7 @@
       :visible.sync="tableVisible"
       :before-close="handleClose"
       append-to-body
+      :close-on-click-modal="false"
     >
       <div v-if="tableVisible">
         <jvs-form :option="formOption" :formData="formData" @submit="handleSubmit">
@@ -201,6 +203,14 @@ export default {
             ],
           },
           {
+            label: '描述',
+            prop: 'description',
+            type: 'textarea',
+            maxlength: 255,
+            rows: 5,
+            showwordlimit: true
+          },
+          {
             label: 'LOGO',
             prop: 'logo',
             formSlot: true
@@ -228,7 +238,7 @@ export default {
     }
   },
   created () {
-    this.getOptions()
+    // this.getOptions()
   },
   methods: {
     // 发布到模板
@@ -300,7 +310,8 @@ export default {
     addByTemplate(obj) {
       this.designVisible = false
       const params = {
-        templateId: obj.id
+        templateId: obj.id,
+        online: obj.online
       }
       add(params).then(res => {
         this.$message.success('新增成功！')

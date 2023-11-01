@@ -1,13 +1,14 @@
 export const tableOption={
   page: true,
-  // addBtn: false,
-  // editBtn: false,
+  addBtn: false,
+  editBtn: false,
   canncal: false,
-  align: 'center',
-  menuAlign: 'center',
+  viewBtn: false,
+  // align: 'center',
+  // menuAlign: 'center',
   search: true,
   cancal: false,
-  showoverflow: true,
+  showOverflow: true,
   column: [
     {
       label: '标题',

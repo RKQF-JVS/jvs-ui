@@ -17,6 +17,9 @@
         <span v-if="scope.row.type != 'FILE'">{{scope.row.configValue}}</span>
         <span v-else>文件</span>
       </template>
+      <template slot="createBy" slot-scope="scope">
+        <el-tag v-if="scope.row.createBy" size="mini">{{ scope.row.createBy }}</el-tag>
+      </template>
       <template slot="menu" slot-scope="scope">
         <jvs-button type="text" size="mini" @click="addForm(scope.row)">修改</jvs-button>
         <jvs-button type="text" size="mini" @click="deleteRow(scope.row)">删除</jvs-button>
@@ -28,6 +31,7 @@
       v-if="dialogVisible"
       class="form-fullscreen-dialog"
       :visible.sync="dialogVisible"
+      :close-on-click-modal="false"
       :before-close="handleClose">
       <jvs-form :option="formOption" :formData="form" @submit="formSubmit">
         <template slot="configValueForm">
@@ -82,8 +86,8 @@ export default {
         editBtn: false,
         viewBtn: false,
         delBtn: false,
-        align: "center",
-        menuAlign: "center",
+        // align: "center",
+        // menuAlign: "center",
         page: true,
         search: true,
         showOverflow: true,
@@ -112,6 +116,7 @@ export default {
           },
           {
             label: "创建人",
+            slot: true,
             prop: "createBy"
           }
         ]

@@ -1,7 +1,7 @@
 <template>
   <div class="oprationlog-manage">
     <jvs-table
-      :option="tableOption" 
+      :option="tableOption"
       :loading="tableLoading"
       :data="tableData"
       pageheadertitle='操作管理'
@@ -40,8 +40,8 @@ export default {
         showOverflow: true,
         addBtn: false,
         menu: false,
-        align: 'center',
-        menuAlign: 'center',
+        // align: 'center',
+        // menuAlign: 'center',
         search: true,
         page: true,
         cancal: false,

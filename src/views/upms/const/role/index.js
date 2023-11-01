@@ -1,8 +1,8 @@
 export const tableOption = {
   page: true,
-  align: "center",
+  // align: "center",
   menu: true,
-  menuAlign: "center",
+  // menuAlign: "center",
   menuWidth: 200,
   viewBtn: false,
   addBtn: false,

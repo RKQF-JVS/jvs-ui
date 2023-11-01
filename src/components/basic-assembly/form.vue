@@ -3,7 +3,7 @@
     :model="formDatas"
     :ref="refs || defalutSet.refs"
     :option="option || defalutSet.option"
-    :class="{'jvs-form': true, 'jvs-form-autoflexable': (option.labelWidth == 'auto' || option.labelwidth == 'auto' || option.formAuto )}"
+    :class="{'jvs-form': true, 'jvs-form-autoflexable': (option.labelWidth == 'auto' || option.labelwidth == 'auto' || option.formAuto ), 'jvs-form-transparent': option.useElStyle}"
     :size="$store.state.params.form.size || option.size || option.formsize || 'mini'"
     :inline="option.inline || defalutSet.option.inline"
     :label-position="option.formAlign || defalutSet.option.formAlign"
@@ -13,35 +13,30 @@
   >
     <slot name="formTop"></slot>
     <el-row style="width:100%;">
-      <!-- v-if="!option.isSearch || (option.isSearch && item.search == true)" -->
       <el-col
         v-for="item in option.column"
-        :key="item.prop"
+        :key="['childrenForm', 'connectForm'].indexOf(item.type) > -1 ? ('children-form' + item.prop) : item.prop"
         :span="isSearch==true?(item.searchSpan || option.searchSpan || 24):(item.span || option.span || 24)"
         v-show="item.display == false ? item.display : true"
         :class="{'no-label-form-item': item.hideLabel}"
         v-if="displayExpressHandle(item)"
       >
-<!--      <el-col-->
-<!--        style="margin-right: 15px;"-->
-<!--        v-for="item in option.column"-->
-<!--        :key="item.prop"-->
-<!--        :span="isSearch==true?(item.searchSpan || option.searchSpan || 24):(item.span || option.span || 24)"-->
-<!--        v-show="item.display == false ? item.display : true"-->
-<!--        :class="{'no-label-form-item': item.hideLabel}"-->
-<!--        v-if="displayExpressHandle(item)"-->
-<!--      >-->
         <el-form-item
           :class='{
             "form-item-no-label": ( (!item.label && item.type != "tab") || (["tableForm","divider","p","section"].indexOf(item.type) > -1) ),
             "form-item-no-label-tab": (!item.label && item.type == "tab"),
-            "reportTable-item": item.type == "reportTable"
+            "reportTable-item": item.type == "reportTable",
+            "before-append-item": item.beforeSlot,
+            "form-item-no-label-nopadding": (!item.label && ["childrenForm","connectForm"].indexOf(item.type) > -1),
           }'
           :label='item.type == "tableForm" ? (item.editable ? item.label : "") : item.label'
           :prop="item.prop"
           v-if="(item.prop !== freshDom) && (item.type !='title' && (!item.children || item.children.length == 0) || item.type == 'formbox') && $permissionMatch(item.permisionFlag) && (item.display == false ? item.display : true)"
           :rules="item.rules"
         >
+          <span v-if="item.beforeSlot" class="before-append-content">
+            <slot :name="item.prop+'Before'"></slot>
+          </span>
           <FormItem
             v-if="!item.formSlot && !item.appendSlot"
             :form="formDatas"
@@ -55,7 +50,15 @@
             :postList="postList"
             :rowData="rowData"
             :resetRadom="resetRadom"
+            :designId="designId"
+            :dataModelId="dataModelId"
+            :changeRandom="changeRandom"
+            :changeDomItem="changeDomItem"
+            :isView="isView"
+            :execsList="execsList"
+            :jvsAppId="jvsAppId"
             @validateHandle="validateHandle"
+            @reInitData="reInitData"
           />
           <!-- 自定义列插槽 -->
           <div v-if="item.formSlot">
@@ -87,7 +90,15 @@
                 :postList="postList"
                 :rowData="rowData"
                 :resetRadom="resetRadom"
+                :designId="designId"
+                :dataModelId="dataModelId"
+                :changeRandom="changeRandom"
+                :changeDomItem="changeDomItem"
+                :isView="isView"
+                :execsList="execsList"
+                :jvsAppId="jvsAppId"
                 @validateHandle="validateHandle"
+                @reInitData="reInitData"
               >
                 <slot :name="item.prop+'Append'" :slot="item.prop+'AppendItem'"></slot>
               </FormItem>
@@ -125,7 +136,15 @@
               :postList="postList"
               :rowData="rowData"
               :resetRadom="resetRadom"
+              :designId="designId"
+              :dataModelId="dataModelId"
+              :changeRandom="changeRandom"
+              :changeDomItem="changeDomItem"
+              :isView="isView"
+              :execsList="execsList"
+              :jvsAppId="jvsAppId"
               @validateHandle="validateHandle"
+              @reInitData="reInitData"
             >
               <!-- 后置插槽 -->
               <span v-if="item.appendSlot">
@@ -184,7 +203,15 @@
                 :postList="postList"
                 :rowData="rowData"
                 :resetRadom="resetRadom"
+                :designId="designId"
+                :dataModelId="dataModelId"
+                :changeRandom="changeRandom"
+                :changeDomItem="changeDomItem"
+                :isView="isView"
+                :execsList="execsList"
+                :jvsAppId="jvsAppId"
                 @validateHandle="validateHandle"
+                @reInitData="reInitData"
               >
                 <!-- 后置插槽 -->
                 <span v-if="it.appendSlot">
@@ -265,7 +292,9 @@
 
 <script>
 import FormItem from './formitem'
-import {getDeptList, getRoleList, getPostList} from '../api'
+import {getDeptList, getRoleList, getPostList, getUserListAll} from '../api'
+import {doExec} from '@/components/basic-container/formula/api'
+import {dataModelTriggering} from '@/components/api'
 export default {
   name: "jvsForm",
   components: { FormItem },
@@ -329,6 +358,21 @@ export default {
     },
     rowData: {
       type: Object
+    },
+    designId: {
+      type: String
+    },
+    dataModelId: {
+      type: String
+    },
+    isView: {
+      type: Boolean
+    },
+    execsList: {
+      type: Array
+    },
+    jvsAppId:  {
+      type: String
     }
   },
   computed: {
@@ -364,10 +408,20 @@ export default {
       clearAll: false, // 重置是否为初始对象{}
       resetRadom: -1, // 通知子项重置随机数 -1不重置
       resetData: "", // 原始数据，用于重置
-      freshDom: ''
+      freshDom: '',
+      changeRandom: -1,
+      changeDomItem: null,
+      deptBool: false,
+      roleBool: false,
+      postBool: false,
+      userBool: false,
+      dataLinkageBool: false,
+      formulaBool: false,
+      parentDom: null,
     }
   },
-  created () {
+  async created () {
+
     this.resetData = JSON.stringify(this.formData)
     this.formDatas = this.formData
     if (this.defalutFormData) {
@@ -378,7 +432,10 @@ export default {
     if(JSON.stringify(this.formDatas) == '{}') {
       this.clearAll = true
     }
-    this.getConst()
+    await this.getConst()
+    if(!this.isView && (this.dataLinkageBool || this.formulaBool)) {
+      this.dataInitHandle(null, null, null, 'init')
+    }
   },
   methods: {
     submitForm (formName) {
@@ -390,9 +447,30 @@ export default {
           return false;
         }
       });
+      // this.$refs[formName].validate((valid, obj) => {
+      //   if (valid) {
+      //     this.$emit('submit', this.formDatas)
+      //   } else {
+      //     // 二次校验
+      //     let submit = true
+      //     Object.keys(obj).forEach(item => {
+      //       if (this.formDatas[item] === undefined || this.formDatas[item].length === 0) {
+      //         submit = false
+      //       } else {
+      //         this.$refs[formName].clearValidate(item)
+      //       }
+      //     })
+      //     if (!submit) {
+      //       console.log('error submit!!')
+      //       return false;
+      //     }
+      //     this.$emit('submit', this.formDatas)
+      //   }
+      // });
     },
     resetForm (formName) {
       if (this.option.isSearch === true) {
+        this.resetRadom = Math.random()
         this.formDatas = {}
       } else {
         if(this.clearAll) {
@@ -407,103 +485,32 @@ export default {
       }
       this.$emit('reset', formName)
     },
-    formChange (form) {
+    formChange (form, item, beforeValue) {
       this.$emit('formChange', form)
+      // 仅 第一层级文本数字组件判断失焦后的值，改变才触发change
+      if(item && form[item.prop] != beforeValue) {
+        this.changeRandom = Math.random()
+        this.changeDomItem = item
+      }
     },
     async getConst () {
-      let deptBool = false
-      let roleBool = false
-      let postBool = false
       // 优化：表单内无对应公共组件不发请求
-      for(let i in  this.option.column) {
-        if(this.option.column[i].type == 'department') {
-          deptBool = true
-        }
-        if(this.option.column[i].type == 'role') {
-          roleBool = true
-        }
-        if(this.option.column[i].type == 'post') {
-          postBool = true
-        }
-        // 加入自定义校验
-        if(this.option.column[i].regularExpression) {
-          let required = false
-          if(this.option.column[i].rules && this.option.column[i].rules[0].required) {
-            required = true
-          }
-          let str = '/' + this.option.column[i].regularExpression + '/'
-          let _this = this
-          this.option.column[i].rules.push({
-            validator: function(rule, value, callback) {
-              if(eval(str).test(value)) {
-                callback()
-              }else{
-                let msg = '正则校验不通过'
-                if(_this.option.column[i].regularMessage) {
-                  msg = _this.option.column[i].regularMessage
-                }
-                if(required == false && !value) {
-                  callback()
-                }else{
-                  callback(new Error(msg));
-                }
-              }
-            },
-            trigger: ['blur', 'change']
-          })
-        }
-
-        // 嵌套项包含公共组件
-        if(['tab', 'step'].indexOf(this.option.column[i].type) > -1) {
-          for(let ti in this.option.column[i].column) {
-            for(let tci in this.option.column[i].column[ti]) {
-              if(this.option.column[i].column[ti][tci].type == 'department') {
-                deptBool = true
-              }
-              if(this.option.column[i].column[ti][tci].type == 'role') {
-                roleBool = true
-              }
-              if(this.option.column[i].column[ti][tci].type == 'post') {
-                postBool = true
-              }
-            }
-          }
-        }
-        if((this.option.column[i].children && this.option.column[i].children.length > 0) || ['tableForm', 'reportTable'].indexOf(this.option.column[i].type) > -1) {
-          let tl = []
-          if(['tableForm', 'reportTable'].indexOf(this.option.column[i].type) > -1) {
-            tl = this.option.column[i].tableColumn
-          }else{
-            tl = this.option.column[i].children
-          }
-          for(let ci in tl) {
-            if(tl[ci].type == 'department') {
-              deptBool = true
-            }
-            if(tl[ci].type == 'role') {
-              roleBool = true
-            }
-            if(tl[ci].type == 'post') {
-              postBool = true
-            }
-          }
-        }
-      }
-      if(deptBool) {
+      this.eachDomTree(this.option.column)
+      if(this.deptBool) { // 默认数据填充的部门只有id，需要查询
         await getDeptList().then(res => {
           if(res.data.code == 0) {
             this.departmentList = res.data.data
           }
         })
       }
-      if(roleBool) {
+      if(this.roleBool) {
         await getRoleList().then(res => {
           if(res.data.code == 0) {
             this.roleOption = res.data.data
           }
         })
       }
-      if(postBool) {
+      if(this.postBool) {
         await getPostList().then(res => {
           if(res.data.code == 0) {
             this.postList = res.data.data
@@ -549,15 +556,15 @@ export default {
     validateHandle (data) {
       let type = data.type
       let item = data.item
-      if(item.type != "htmlEditor") {
+      if(['user', 'role', 'department', 'group', 'job', 'htmlEditor'].indexOf(item.type) === -1) {
         this.freshDom = item.prop
       }
-      if(type == 'clear') {
-        this.$refs[this.refs || this.defalutSet.refs].clearValidate(item.prop)
-      }else{
-        this.$refs[this.refs || this.defalutSet.refs].validateField(item.prop)
-      }
       this.$nextTick( () => {
+        if(type == 'clear') {
+          this.$refs[this.refs || this.defalutSet.refs].clearValidate(item.prop)
+        }else{
+          this.$refs[this.refs || this.defalutSet.refs].validateField(item.prop)
+        }
         this.freshDom = ''
       })
       this.$forceUpdate()
@@ -597,7 +604,7 @@ export default {
           }
         }
         if(temp.length > 0) {
-          if(eval(temp.join(' || '))) {
+          if(eval(temp.join(` ${item.showOperator || '||'} `))) {
             bool = true
           }
         }
@@ -605,7 +612,223 @@ export default {
         bool = true
       }
       return bool
-    }
+    },
+    // 联动或公式初始化
+    dataInitHandle (prop, parentKey, index, optype, tableType) {
+      if(this.designId) {
+        let hasDataTrigger = false // 是否执行联动
+        if(prop) {
+          let tp = {
+            prop: prop,
+          }
+          if(parentKey) {
+            tp.parentKey = parentKey
+          }
+          let tlist = this.dataTriggerEnableDom(tp) // 同级的联动组件
+          tlist.filter(tit => {
+            if(tit.dataLinkageList) {
+              tit.dataLinkageList.filter(tid => {
+                // 当前组件作为同级中的联动条件
+                if(tid.value == prop) {
+                  hasDataTrigger = true
+                }
+              })
+            }
+          })
+        }
+        if(optype == 'init' || tableType) {
+          hasDataTrigger = true
+        }
+        if(this.dataModelId && hasDataTrigger) {
+          let triobj = {
+            params: this.formDatas
+          }
+          if(prop) {
+            triobj.modifiedField = prop
+          }
+          if(parentKey) {
+            triobj.parentKey = parentKey.split('.')
+          }
+          if(index > -1) {
+            triobj.index = index
+          }
+          dataModelTriggering(this.jvsAppId, this.designId, this.dataModelId, triobj, optype == 'init' ? {init: true} : (tableType ? {tableType: tableType} : null) ).then(res => {
+            if(res.data && res.data.code == 0) {
+              if(res.data.data) {
+                // console.log('联动。。。。', res.data.data)
+                for(let i in res.data.data) {
+                  this.$set(this.formDatas, i , res.data.data[i])
+                }
+                // 公式
+                let obp = {
+                  params: this.formDatas
+                }
+                if(prop) {
+                  obp.modifiedField = prop
+                }
+                if(parentKey) {
+                  obp.parentKey = parentKey.split('.')
+                }
+                if(index > -1) {
+                  obp.index = index
+                }
+                if(optype == 'init' || (this.execsList && this.execsList.indexOf(parentKey ? parentKey+'.'+prop : prop) > -1)) {
+                  doExec('jvs-design', this.designId, 'formItemValue', obp, optype == 'init' ? {init: true} : null ).then(res => {
+                    if(res.data && res.data.code == 0) {
+                      if(res.data.data) {
+                        // console.log('公式。。。。', res.data.data)
+                        for(let i in res.data.data) {
+                          this.$set(this.formDatas, i , res.data.data[i])
+                        }
+                      }
+                    }
+                  })
+                }
+              }
+            }
+          })
+        }else{
+          let obp = {
+            params: this.formDatas
+          }
+          if(prop) {
+            obp.modifiedField = prop
+          }
+          if(parentKey) {
+            obp.parentKey = parentKey.split('.')
+          }
+          if(index > -1) {
+            obp.index = index
+          }
+          if(optype == 'init' || (this.execsList && this.execsList.indexOf(parentKey ? parentKey+'.'+prop : prop) > -1)) {
+            doExec('jvs-design', this.designId, 'formItemValue', obp).then(res => {
+              if(res.data && res.data.code == 0) {
+                if(res.data.data) {
+                  for(let i in res.data.data) {
+                    this.$set(this.formDatas, i , res.data.data[i])
+                  }
+                }
+              }
+            })
+          }
+        }
+      }
+    },
+    reInitData (prop, parentKey, index, tableType) {
+      if(prop) {
+        this.dataInitHandle(prop, parentKey, index, null, tableType)
+      }
+      if(prop == '' && parentKey == '') {
+        this.dataInitHandle('', '')
+      }
+    },
+    eachDomTree(list) {
+      for(let i in list) {
+        // 加入自定义校验
+        if(list[i].regularExpression) {
+          let required = false
+          if(list[i].rules && list[i].rules[0].required) {
+            required = true
+          }
+          let str = '/' + list[i].regularExpression + '/'
+          list[i].rules.push({
+            validator: function(rule, value, callback) {
+              if(eval(str).test(value)) {
+                callback()
+              }else{
+                let msg = '正则校验不通过'
+                if(list[i].regularMessage) {
+                  msg = list[i].regularMessage
+                }
+                if(required == false && !value) {
+                  callback()
+                }else{
+                  callback(new Error(msg));
+                }
+              }
+            },
+            trigger: ['blur', 'change']
+          })
+        }
+        if(list[i].type == 'department') {
+          this.deptBool = true
+        }
+        if(list[i].type == 'role') {
+          this.roleBool = true
+        }
+        if(list[i].type == 'job') {
+          this.postBool = true
+        }
+        if(list[i].type == 'user') {
+          this.userBool = true
+        }
+        if(list[i].dataLinkageModelId) {
+          this.dataLinkageBool = true
+        }
+        if(list[i].formula) {
+          this.formulaBool = true
+        }
+        if(['tab', 'step'].indexOf(list[i].type) > -1) {
+          for(let c in list[i].column) {
+            this.eachDomTree(list[i].column[c])
+          }
+        }
+        if(['tableForm', 'reportTable'].indexOf(list[i].type) > -1 && list[i].tableColumn && list[i].tableColumn.length > 0){
+          if(list[i].formId) {
+            this.dataLinkageBool = true
+          }
+          this.eachDomTree(list[i].tableColumn)
+        }
+        if(list[i].children && list[i].children.length > 0) {
+          this.eachDomTree(list[i].children)
+        }
+      }
+    },
+    dataTriggerEnableDom (dom) {
+      if(dom.parentKey) {
+        let list = []
+        this.findParentDom(this.option.column, dom.parentKey)
+        if(this.parentDom) {
+          let parentType = this.parentDom.type
+          switch(parentType) {
+            case 'tableForm':
+              if(this.parentDom.tableColumn) {
+                list = this.parentDom.tableColumn.filter(item => {
+                  return (item.dataLinkageList && item.dataLinkageList.length > 0)
+                })
+              }
+            break;
+            default: list = this.option.column.filter(item => { return (item.dataLinkageList && item.dataLinkageList.length > 0)});break;
+          }
+        }else{
+          list = this.option.column.filter(item => { return (item.dataLinkageList && item.dataLinkageList.length > 0)})
+        }
+        return list
+      }else{
+        return this.option.column.filter(item => {
+          return (item.dataLinkageList && item.dataLinkageList.length > 0)
+        })
+      }
+    },
+    findParentDom (list, key) {
+      if(list && list.length > 0) {
+        list.filter(item => {
+          if(key) {
+            let pks = key.split('.')
+            if(pks && pks.length > 0 && item.prop == pks[pks.length - 1]) {
+              this.parentDom = item
+            }
+          }
+          if(['tab', 'step'].indexOf(item.type) > -1) {
+            for(let j in item.column) {
+              if(item.column[j] && item.column[j].length > 0) {
+                this.findParentDom(item.column[j], key)
+              }
+            }
+          }
+        })
+      }
+    },
   }
 };
 </script>
@@ -666,6 +889,9 @@ export default {
     margin-left: 0!important;
   }
 }
+.form-item-no-label-nopadding{
+  padding: 0!important;
+}
 .form-item-tips{
   font-size: 12px;
   color: #c3c3c3;
@@ -677,6 +903,12 @@ export default {
   .el-form-item__content{
     margin-left: 0!important;
     width: 100%;
+  }
+}
+.before-append-item{
+  .el-form-item__content{
+    display: flex;
+    align-items: center;
   }
 }
 </style>

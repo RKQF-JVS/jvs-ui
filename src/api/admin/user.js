@@ -136,11 +136,32 @@ export function setPassWord(data) {
   });
 }
 
+// admin修改用户密码
+export function setUserPassWord(userId, data) {
+  return request({
+    url: `/mgr/jvs-auth/user/users/update/password/${userId}`,
+    method: "post",
+    data: data
+  });
+}
+
 // 注销帐号
 export function loginOff() {
   return request({
     url: "/mgr/jvs-auth/index/logoff",
     method: "put",
+  });
+}
+
+// 修改账号头像
+export function updateAccountHead(key, value) {
+  let url = `/mgr/jvs-auth/index/update/account?${key}=${value}`
+  if(key == 'headImg') {
+    url = `/mgr/jvs-auth/index/bind/headImg?${key}=${value}`
+  }
+  return request({
+    url: url,
+    method: "put"
   });
 }
 
@@ -222,5 +243,73 @@ export function bindOpenId(data) {
   return request({
     url: `/mgr/jvs-auth/user/wx/binding/${data.openId}`,
     method: "post"
+  });
+}
+
+// 根据用户id查询用户信息
+export function getUserInfoById(id) {
+  return request({
+    url: `/mgr/jvs-auth/user/user/${id}`,
+    method: "get"
+  });
+}
+
+// 根据一堆用户id查询用户信息
+export function getUserInfoListByIds(ids) {
+  return request({
+    url: `/mgr/jvs-auth/user/all`,
+    method: "post",
+    data: ids
+  });
+}
+
+// 企业微信绑定
+export function bindQW(params) {
+  return request({
+    url: `/mgr/jvs-auth/index/bind/wxenterprise`,
+    method: "put",
+    params: params
+  });
+}
+
+// 解除企业微信绑定
+export function unbindQW() {
+  return request({
+    url: "/mgr/jvs-auth/index/bind/wxenterprise",
+    method: "delete"
+  });
+}
+
+// 绑定钉钉
+export function bindDD (params) {
+  return request({
+    url: "/mgr/jvs-auth/index/bind/ding",
+    method: "put",
+    params: params
+  });
+}
+
+// 解除钉钉绑定
+export function unbindDD () {
+  return request({
+    url: "/mgr/jvs-auth/index/bind/ding",
+    method: "delete"
+  });
+}
+
+// 绑定LDAP
+export function bindLDAP (params) {
+  return request({
+    url: "/mgr/jvs-auth/index/bind/ldap",
+    method: "put",
+    params: params
+  });
+}
+
+// 解除LDAP绑定
+export function unbindLDAP () {
+  return request({
+    url: "/mgr/jvs-auth/index/bind/ldap",
+    method: "delete"
   });
 }

@@ -7,13 +7,15 @@
         :page="page"
         :option="option"
         :data="tableData"
+        :loading="tableLoading"
         @on-load="getList"
+        @search-change="searchChange"
       >
         <template slot="menuLeft">
           <jvs-button type="primary" size="mini" @click="dialogVisibleShow('add', null, null, 'post')" permisionFlag="upms_group_add">添加团队</jvs-button>
         </template>
         <template slot="menu" slot-scope="scope">
-          <jvs-button type="text" size="mini" permisionFlag="upms_group_remove" @click="delUSerGroup(scope.row)">移出</jvs-button>
+          <jvs-button type="text" size="mini" v-if="groupId !== ''" permisionFlag="upms_group_remove" @click="delUSerGroup(scope.row)">移出</jvs-button>
         </template>
         <template slot="roleName" slot-scope="scope">
           <el-tag v-for="ritem in scope.row.roleName" :key="ritem" style="margin-right:5px;">{{ritem}}</el-tag>
@@ -57,7 +59,7 @@
                   </li>
                   <li v-if="$permissionMatch('upms_group_delete') && (!(data.childList && data.childList.length > 0))" @click.stop="() => remove(data)">
                     <!-- <i class="el-icon-delete iconhover"></i> -->
-                    <span>删除</span>
+                    <span style="color: #F56C6C;">删除</span>
                   </li>
                 </ul>
                 <i slot="reference" class="el-icon-more iconhover" @click.stop="morePost(data)"></i>
@@ -80,7 +82,14 @@
         </jvs-form>
       </div>
     </el-dialog>
-    <userSelector ref="userSelector" :selectable="true" @submit="addCheckUSer"></userSelector>
+    <userSelector
+      ref="userSelector"
+      :userEnable="true"
+      :currentActiveName="'user'"
+      :selectable="true"
+      :dialogTitle="'人员选择'"
+      @submit="addCheckUSer"
+    />
   </div>
 </template>
 <script>
@@ -93,7 +102,7 @@ export default {
   components: {dataPermision, userSelector},
   data () {
     return {
-      groupId: undefined, // 团队id
+      groupId: '', // 团队id
       queryParams: {},
       page: {
         total: 0, // 总页数
@@ -102,6 +111,7 @@ export default {
       },
       option: tableOption,
       tableData: [],
+      tableLoading: false,
       rowData: {},
       title: '新增',
       method: '',
@@ -164,8 +174,13 @@ export default {
     // this.option.delBtn = this.$permissionMatch("upms_mgr_shan_chu_yong_hu")
   },
   methods: {
+    searchChange (form) {
+      this.queryParams = form
+      this.getList()
+    },
     // 获取数据
     getList (page) {
+      this.tableLoading=true
       let obj={
         size: this.page.pageSize,
         current: this.page.currentPage
@@ -178,7 +193,12 @@ export default {
           this.tableData=res.data.data.records
           this.page.currentPage=res.data.data.current
           this.page.total=res.data.data.total
+          this.tableLoading=false
+        } else {
+          this.tableLoading=false
         }
+      }).catch(err => {
+        this.tableLoading=false
       })
     },
     // 团队更多
@@ -201,9 +221,9 @@ export default {
     groupHandleClick (data, node, dom) {
       this.selectOneData = data
       if(this.groupId == data.id) {
-        this.groupId = ""
-        this.$refs.groupTree.setCurrentKey(null)
-        this.$forceUpdate()
+        // this.groupId = ""
+        // this.$refs.groupTree.setCurrentKey(null)
+        // this.$forceUpdate()
       }else{
         this.groupId = data.id
       }
@@ -347,9 +367,11 @@ export default {
     display: flex;
     align-items: center;
     margin: 0;
-    margin-bottom: 10px;
+    //margin-bottom: 10px;
+    height: 32px;
+    line-height: 32px;
     cursor: pointer;
-    padding: 5px 10px;
+    padding: 6px 24px;
     i{
       margin-right: 10px;
       font-size: 14px!important;
@@ -363,8 +385,8 @@ export default {
   }
 }
 </style>
-<style lang="scss">
-.group-manage-box {
+<style lang="scss" scoped>
+.group-manage-box/deep/ {
   position: relative;
   height: 100%;
   .error-tip-item{
@@ -383,15 +405,17 @@ export default {
   .treeBox {
     position: absolute;
     //top: 94px;
-    top: 72px;
+    //top: 72px;
+    top: 0;
     left: 0;
     width: 250px;
     //height: calc(100% - 94px);
-    height: calc(100% - 72px);
+    //height: calc(100% - 72px);
+    height: calc(100% - 10px);
     overflow: hidden;
     overflow-y: auto;
     padding-left: 20px;
-    border-right: 1px solid #DCDFE6;
+    //border-right: 1px solid #DCDFE6;
     padding-top: 20px;
     padding-bottom: 20px;
     box-sizing: border-box;
@@ -437,6 +461,7 @@ export default {
     }
     .el-tree-node{
       .el-tree-node__content{
+        padding-left: 6px!important;
         width: 100%;
       }
     }
@@ -448,6 +473,10 @@ export default {
   }
   .treeBox::-webkit-scrollbar{
     display: none;
+  }
+  .jvs-table-titleTop{
+    width: calc(100% - 250px);
+    margin-left: 250px;
   }
   .el-table{
     width: calc(100% - 250px);

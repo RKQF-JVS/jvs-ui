@@ -21,13 +21,14 @@
         <div v-else class="login">
           <div class="login-top">
             <h5>{{formType == 'login' ? '欢迎登录' : '注册账号'}}</h5>
-            <div class="top-right" v-if="formType == 'login' && (hasLoginRight('password') || hasLoginRight('phone')) && (hasLoginRight('wx') || hasLoginRight('wxmp'))">
+            <div class="top-right"
+              v-if="formType == 'login' && loginType != 'namepass' && hasLoginRight('password') && (hasLoginRight('wx') || hasLoginRight('wxmp') || hasLoginRight('dd') || hasLoginRight('wxenterprise'))"
+              @click="changeType('namepass')">
               <p class="code"></p>
-              <i class="icon-erweima" v-if="loginType != 'weixin'" @click="changeType('weixin')"></i>
-              <i class="el-icon-user-solid" v-if="loginType == 'weixin'" @click="changeType(hasLoginRight('password') ? 'namepass' : 'phone')"></i>
+              <i class="el-icon-user-solid" v-if="loginType != 'namepass'"></i>
             </div>
           </div>
-          <div class="login-center" v-if="!fresh">
+          <div :class="{'login-center': true, 'code-login-center': (['weixin', 'dd', 'wxenterprise'].indexOf(loginType) > -1)}" v-if="!fresh">
             <!-- status-icon -->
             <el-form
               class="jvs-loginCom-form"
@@ -47,6 +48,24 @@
                   @keyup.enter.native="handleLogin"
                   v-model="loginForm.username"
                   placeholder="请输入姓名"
+                >
+                  <i
+                    slot="prefix"
+                    class="el-icon-user-solid"
+                  ></i>
+                </el-input>
+              </el-form-item>
+              <!-- LDAP账号 -->
+              <el-form-item
+                prop="account"
+                v-if="loginType == 'ldap'"
+                class="no-suffix"
+              >
+                <el-input
+                  size="small"
+                  @keyup.enter.native="handleLogin"
+                  v-model="loginForm.account"
+                  placeholder="请输入LDAP账号"
                 >
                   <i
                     slot="prefix"
@@ -76,7 +95,7 @@
               <!-- 密码 -->
               <el-form-item
                 prop="password"
-                v-if="loginType == 'namepass'"
+                v-if="loginType == 'namepass' || loginType == 'ldap'"
                 class="no-suffix"
               >
                 <el-input
@@ -185,15 +204,24 @@
               <!-- 微信二维码登录 -->
               <div v-if="loginType == 'weixin' && wxType =='wx'" @click="freshWeixin" style="width: 300px;height: 330px;position: absolute;left: 50%;margin-left: -150px;cursor:pointer;z-index: 9;">
               </div>
-              <iframe id="weixinCode" v-if="loginType == 'weixin' && wxType =='wx'" :src="'/auth/just/login/WECHAT_OPEN?url='+ callbackUrl" style="position: absolute;left: 50%;margin-left: -150px;cursor:pointer;" scrolling="no"  frameborder="0" height="330"></iframe>
-              <div v-loading="QRLoading"
+              <!-- 微信 -->
+              <iframe id="weixinCode" v-if="loginType == 'weixin' && wxType =='wx'" :src="`/auth/just/login/WECHAT_OPEN?client_id=${client_id}&url=`+ callbackUrl" style="position: absolute;left: 50%;margin-left: -150px;cursor:pointer;" scrolling="no"  frameborder="0" height="330"></iframe>
+              <!-- 公众号 -->
+              <div v-loading="QRLoading" v-if="loginType == 'weixin' && OfficQrcodeUrl && wxType=='wxmp'"
                 element-loading-text="正在登录..." style="position: absolute;left: 50%;margin-left: -165px;width: 330px;min-height: auto;display: flex;align-items: center;justify-content: center;flex-direction: column;">
                 <div v-if="loginType == 'weixin' && OfficQrcodeUrl && wxType=='wxmp'" style="font-size:22px;">微信扫一扫登录</div>
                 <img id="weixinCode"  @click="freshWeixin"
-                 :src="OfficQrcodeUrl" v-if="loginType == 'weixin'  && OfficQrcodeUrl"  scrolling="no"  frameborder="0" height="330" width="330" style="cursor:pointer;"/>
-                <div v-if="loginType == 'weixin' && OfficQrcodeUrl" style="font-size: 14px;margin-top: 5px;">扫码关注公众号完成登录</div>
-                <div class="expires-box" v-if="isExpires" @click="freshWeixin">二维码已失效,点击刷新</div>
+                 :src="OfficQrcodeUrl" v-if="loginType == 'weixin'  && OfficQrcodeUrl && wxType=='wxmp'"  scrolling="no"  frameborder="0" height="330" width="330" style="cursor:pointer;"/>
+                <div v-if="loginType == 'weixin' && OfficQrcodeUrl && wxType=='wxmp'" style="font-size: 14px;margin-top: 5px;">扫码关注公众号完成登录</div>
+                <div class="expires-box" v-if="isExpires && loginType == 'weixin' && OfficQrcodeUrl && wxType=='wxmp'" @click="freshWeixin">二维码已失效,点击刷新</div>
               </div>
+
+              <!-- 钉钉扫码登录 -->
+              <iframe id="ddLogin" v-if="loginType == 'dd' && ddCodeUrl" :src="ddCodeUrl" style="position: absolute;left: 50%;margin-left: -150px;cursor:pointer;width:300px;height:330px;" scrolling="no"  frameborder="0" height="330"></iframe>
+
+              <!-- 企业微信扫码登录 -->
+              <iframe v-if="loginType == 'wxenterprise'" id="wxenterpriseCode" :src="`/auth/just/login/WECHAT_ENTERPRISE?client_id=${client_id}&url=`+ callbackUrl" style="position: absolute;left: 50%;margin-left: -150px;cursor:pointer;" scrolling="no"  frameborder="0" height="330"></iframe>
+
               <!-- 按钮 -->
               <el-form-item>
                 <el-button
@@ -202,7 +230,7 @@
                   @click.native="handleLogin"
                   class="login-submit-button"
                   :loading="submitLoading"
-                  v-if="formType == 'login' && loginType != 'weixin' && loginType != 'app' && loginType != 'third'"
+                  v-if="formType == 'login' && ['weixin', 'dd', 'wxenterprise', 'app', 'third'].indexOf(loginType) == -1"
                 >登录</el-button>
                 <el-button
                   type="primary"
@@ -213,7 +241,7 @@
                   v-if="formType == 'register'"
                 >注册</el-button>
               </el-form-item>
-              <el-row v-if="loginType != 'weixin'" class="btntab">
+              <el-row v-if="['weixin', 'dd', 'wxenterprise', 'ldap'].indexOf(loginType) == -1" class="btntab">
                 <p v-if="formType == 'login'">
                   <el-button
                     type="text"
@@ -230,7 +258,7 @@
                 </p>
                 <p v-else></p>
                 <p>
-                  <span v-if="formType == 'login' && hasLoginRight('phone')">没有账号？<jvs-button type="text" @click="changeFormType('register', 'register')">点击注册</jvs-button></span>
+                  <span v-if="false && formType == 'login' && hasLoginRight('phone')">没有账号？<jvs-button type="text" @click="changeFormType('register', 'register')">点击注册</jvs-button></span>
                 </p>
               </el-row>
               <el-row class="note-text" v-if="formType == 'register'">
@@ -241,10 +269,13 @@
                   <span><jvs-button type="text" @click="changeFormType('namepass', 'login')">去登录</jvs-button></span>
                 </p>
               </el-row>
-              <el-row v-if="loginType != 'weixin' && formType == 'login' && (hasLoginRight('wx')||hasLoginRight('wxmp'))" class="other-type-item">
+              <el-row v-if="formType == 'login' && ( hasLoginRight('wx') || hasLoginRight('wxmp') || hasLoginRight('wxenterprise')  || hasLoginRight('ldap') || hasLoginRight('dd'))" class="other-type-item">
                 <el-divider content-position="center">其他登录方式</el-divider>
                 <p>
-                  <img :src="wxImgIcon" alt="" @click="changeType('weixin')">
+                  <img v-if="(hasLoginRight('wx') || hasLoginRight('wxmp')) && loginType != 'weixin'" :src="wxImgIcon" alt="" @click="changeType('weixin')">
+                  <img v-if="hasLoginRight('wxenterprise') && loginType != 'wxenterprise'" :src="qwImgIcon" alt="" @click="changeType('wxenterprise')">
+                  <img v-if="hasLoginRight('ldap') && loginType != 'ldap'" :src="ldapImgIcon" alt="" @click="changeType('ldap')">
+                  <img v-if="hasLoginRight('dd') && loginType != 'dd'" :src="dingImgIcon" alt="" @click="changeType('dd')">
                 </p>
               </el-row>
             </el-form>
@@ -257,10 +288,13 @@
 </template>
 <script>
 import wxImg from './icon/wx.png'
+import ldapImg from './icon/ldap.png'
+import qwImg from './icon/qw.png'
+import dingImg from './icon/dinglogo.png'
 import QRcode from "../../QRcode/index"
 import { randomLenNum,encryption } from "@/util/util";
-import { getPhone, getRegPhoneCode, getCanLogin,getOffLoginQcode,checkQrcodeState,codeLogin } from "@/api/login"
-import {enCodeKey} from "@/const/const"
+import { getPhone, getRegPhoneCode, getCanLogin,getOffLoginQcode,checkQrcodeState,codeLogin, getInfoByLoginType } from "@/api/login"
+import { enCodeKey, client_id } from "@/const/const"
 export default {
   components: { 'qr-code': QRcode},
   computed: {
@@ -308,9 +342,13 @@ export default {
     };
     return {
       wxImgIcon: wxImg,
+      ldapImgIcon: ldapImg,
+      qwImgIcon: qwImg,
+      dingImgIcon: dingImg,
       loginVisible: false,
       loginForm: {
         username: "", // "admin",
+        account: "",
         password: "", // "123456",
         code: "",
         redomStr: "",
@@ -323,6 +361,9 @@ export default {
         username: [
           { required: true, message: " ", trigger: "blur" },
           { validator: validateUserName, trigger: 'blur' }
+        ],
+        account: [
+          { required: true, message: " ", trigger: "blur" },
         ],
         password: [
           { required: true, message: " ", trigger: "blur" },
@@ -374,7 +415,10 @@ export default {
       QRcodeUUId:'',
       QRCheckSetInterval:null,
       QRChcekSetTimeout:null,
-      QRLoading:false
+      QRLoading:false,
+      ddCodeUrl: '',
+      ddInfo: null,
+      client_id: client_id
     }
   },
   methods: {
@@ -387,7 +431,7 @@ export default {
           }else{
             this.loginType = 'phone'
           }
-          // 個人
+          // 微信
           if(this.loginTypes.indexOf('wx') > -1) {
             this.loginType = 'weixin'
             this.wxType = 'wx'
@@ -399,19 +443,27 @@ export default {
           }else{
             this.$store.dispatch("LogOut")
           }
-          // 企業
+          // 微信公众号
           if(this.loginTypes.indexOf('wxmp')>-1){
             this.loginType = 'weixin'
             this.wxType = 'wxmp'
             this.QRLoading = false
-            this.getOffLoginQcode()
+            if(!this.switchTenant){
+              this.getOffLoginQcode()
+            }
           }
         }
       })
     },
     // 获取二维码
     getOffLoginQcode(){
-      this.QRcodeUUId = this.getUUId()
+      let uuid = this.getUUId(),uuidNew = []
+      uuid.split('').forEach(item => {
+        if(item!='-'){
+          uuidNew.push(item)
+        }
+      });
+      this.QRcodeUUId = uuidNew.join('')
       getOffLoginQcode(this.QRcodeUUId).then(res=>{
         if(res.data.code==0){
           this.OfficQrcodeUrl = res.data.data
@@ -465,7 +517,7 @@ export default {
       })
     },
     getUUId(){
-      return URL.createObjectURL(new Blob()).substr(-36).replaceAll('-','')
+      return URL.createObjectURL(new Blob()).substr(-36)
     },
     handleClose () {
       if(this.QRCheckSetInterval){
@@ -514,6 +566,12 @@ export default {
       }
       if (type !== 'weixin' && this.$refs.QRCode) {
         this.$refs.QRCode.clear()
+      }
+      if(type == 'dd') {
+        // 钉钉二维码
+        this.getDDCode()
+      }else{
+        this.ddCodeUrl = ''
       }
       this.loginType = type
       this.resetLogin()
@@ -572,18 +630,23 @@ export default {
     handleLogin () {
       this.$refs.loginForm.validate(valid => {
         if (valid) {
-          let temp = {}
-          if(this.queryData) {
-            temp = JSON.parse(JSON.stringify(this.queryData))
+          let subData = {}
+          if(this.loginType == 'ldap') {
+            subData = { loginType: 'LDAP', account: this.loginForm.account, password: this.loginForm.password }
+          }else{
+            let temp = {}
+            if(this.queryData) {
+              temp = JSON.parse(JSON.stringify(this.queryData))
+            }
+            subData = Object.assign(temp, this.loginForm, { loginType: this.loginType, code: this.loginType === 'namepass' ? this.loginForm.namecode : this.loginForm.code })
           }
           this.submitLoading = true
-          this.$store.dispatch("LoginByUsername", Object.assign(temp, this.loginForm, { loginType: this.loginType, code: this.loginType === 'namepass' ? this.loginForm.namecode : this.loginForm.code })).then((data) => {
-            if(data.userDto && data.userDto.callBackUrl){
-              this.$openUrl(`${data.userDto.callBackUrl}?Authorization=${'Bearer ' + data.access_token}`, '_self')
-            }else{
-              this.getTenantByUserList(data)
+          this.$store.dispatch("LoginByUsername", subData).then((data) => {
+            this.getTenantByUserList(data)
+          }).catch((err) => {
+            if(this.loginType != 'ldap') {
+              this.$message.error(err.message)
             }
-          }).catch(() => {
             this.refreshCode()
             this.submitLoading = false
           })
@@ -638,16 +701,22 @@ export default {
       if(data.userDto && data.userDto.tenants) {
         list = data.userDto.tenants
         if(list.length > 0) {
-          // 只有一个租户直接进去
-          if(list.length == 1) {
-            this.$store.commit("SET_SwitchTenant", false)
-            this.setUserInfoData(data)
-            if(this.successClose !== false) {
-              this.handleClose()
-            }
-            // 后续操作
-            if(this.afterLogin) {
-              this.afterLogin(this.$refs.loginComDialog, data)
+          // 只有一个租户 或指定租户 直接进去
+          if(list.length == 1 || (data.userDto.tenantId && data.userDto.tenant)) {
+            if(data.userDto && data.userDto.callBackUrl && localStorage.getItem('loginQuery')){
+              this.$openUrl(`${data.userDto.callBackUrl}?access_token=${data.access_token}&refresh_token=${data.refresh_token}`, '_self') // 'Bearer ' +
+              localStorage.setItem('loginQuery', '')
+              this.submitLoading = false
+            }else{
+              this.$store.commit("SET_SwitchTenant", false)
+              this.setUserInfoData(data)
+              if(this.successClose !== false) {
+                this.handleClose()
+              }
+              // 后续操作
+              if(this.afterLogin) {
+                this.afterLogin(this.$refs.loginComDialog, data)
+              }
             }
           }else{
             this.submitLoading = false
@@ -664,13 +733,19 @@ export default {
         this.tenantLoading = true
         this.$store.dispatch('RefreshToken', item.id).then(data => {
           if(data) {
-            this.setUserInfoData(data)
-            if(this.successClose !== false) {
-              this.handleClose()
-            }
-            // 后续操作
-            if(this.afterLogin) {
-              this.afterLogin(this.$refs.loginComDialog, data)
+            if(data.userDto && data.userDto.callBackUrl && localStorage.getItem('loginQuery')){
+              this.$openUrl(`${data.userDto.callBackUrl}?access_token=${data.access_token}&refresh_token=${data.refresh_token}`, '_self') // 'Bearer ' +
+              localStorage.setItem('loginQuery', '')
+              this.submitLoading = false
+            }else{
+              this.setUserInfoData(data)
+              if(this.successClose !== false) {
+                this.handleClose()
+              }
+              // 后续操作
+              if(this.afterLogin) {
+                this.afterLogin(this.$refs.loginComDialog, data)
+              }
             }
           }else{
             this.submitLoading = false
@@ -730,6 +805,30 @@ export default {
     // 使用条款
     openRule () {
       this.$openUrl('/agreement/policies.html', '_blank')
+    },
+    // 钉钉二维码生成
+    getDDCode () {
+      getInfoByLoginType({type: 'dd'}).then(res => {
+        if(res && res.data && res.data.code == 0) {
+          this.ddInfo = res.data.data
+          let url = encodeURIComponent(res.data.data.redirectUri || `${location.origin}/#/login/dingtalk/scanback`);
+          let goto = encodeURIComponent(`https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=${res.data.data.appId}&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=${url}`)
+          this.ddCodeUrl = `https://login.dingtalk.com/login/qrcode.htm?goto=${goto}&style=border:none;background-color:#FFFFFF;`
+          this.$forceUpdate()
+        }
+      })
+    },
+    // 钉钉扫码回调
+    dingdingBackHandle (event) {
+      var origin = event.origin;
+      if( origin == "https://login.dingtalk.com" ) { //判断是否来自ddLogin扫码事件。
+        var loginTmpCode = event.data;
+        //获取到loginTmpCode后就可以在这里构造跳转链接进行跳转了
+        console.log("loginTmpCode", loginTmpCode);
+        let url = encodeURIComponent(this.ddInfo.redirectUri || `${location.origin}/#/login/dingtalk/scanback`);
+        let goto = encodeURIComponent(`https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=${this.ddInfo.appId}&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=${url}`)
+        this.$openUrl(`https://oapi.dingtalk.com/connect/oauth2/sns_authorize?appid=${this.ddInfo.appId}&response_type=code&scope=snsapi_login&state=STATE&redirect_uri=${goto}&loginTmpCode=${loginTmpCode}`, '_self')
+      }
     }
   },
   created () {
@@ -738,6 +837,12 @@ export default {
     let randomStr = Math.random() + ""
     this.randomString = '/' + (randomStr.slice(2, randomStr.length))
     localStorage.setItem('loginRandom', this.randomString)
+    // 监听钉钉扫码
+    if (typeof window.addEventListener != 'undefined') {
+      window.addEventListener('message', this.dingdingBackHandle, false);
+    } else if (typeof window.attachEvent != 'undefined') {
+      window.attachEvent('onmessage', this.dingdingBackHandle);
+    }
   }
 }
 </script>
@@ -766,12 +871,13 @@ export default {
     height: 600px;
     border-radius: 10px;
     position: absolute;
+    box-shadow: 0 2px 4px rgba(222, 222, 222, 0.5);
     h1,h2,h3,h4,h5,p{
       margin: 0;
       padding: 0;
     }
     .login{
-      padding: 0 20px;
+      padding: 0 40px;
       width: 100%;
       height: 100%;
       box-sizing: border-box;
@@ -779,7 +885,7 @@ export default {
         overflow: hidden;
         h5{
           font-size: 30px;
-          font-family: Source Han Sans CN;
+          font-family: MiSans-Demibold;
           font-weight: 500;
           line-height: 30px;
           color: #3471FF;
@@ -859,7 +965,7 @@ export default {
             height: 50px;
             background: #3471FF;
             color: #fff;
-            font-size: 22px;
+            font-size: 14px;
           }
           .code-row{
             height: 60px;
@@ -882,8 +988,8 @@ export default {
             p{
               width: 50%;
               .el-button, span{
-                font-size: 18px;
-                font-family: Source Han Sans CN;
+                font-size: 14px;
+                font-family: MiSans-Demibold;
                 font-weight: 400;
               }
             }
@@ -908,8 +1014,9 @@ export default {
             margin-top: 25px;
             .el-divider{
               .el-divider__text{
-                font-size: 18px;
-                font-family: Source Han Sans CN;
+                font-size: 14px;
+                //font-family: Source Han Sans CN;
+                font-family: MiSans-Demibold;
                 font-weight: 400;
                 color: #868BA1;
               }
@@ -924,16 +1031,29 @@ export default {
                 width: 50px;
                 height: 50px;
                 cursor: pointer;
+                margin-left: 10px;
+              }
+              img:nth-of-type(1){
+                margin-left: 0;
               }
             }
           }
         }
       }
+      .code-login-center{
+        .other-type-item{
+          margin-top: 330px!important;
+        }
+      }
     }
     .user-tenant-list{
-      padding: 0 10px;
+      //padding: 0 10px;
+      padding: 0 20px;
       position: relative;
+      height: 100%;
+      overflow-y: auto;
       p{
+        border-radius: 6px;
         width: 100%;
         height: 60px;
         overflow: hidden;
@@ -945,7 +1065,7 @@ export default {
         display: flex;
         align-items: center;
         background: #fff;
-        border: 1px solid #EFF2F7;
+        //border: 1px solid #EFF2F7;
         img{
           display: block;
           width: 40px;

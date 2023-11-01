@@ -16,6 +16,7 @@
       title="新增"
       v-if="dialogVisible"
       :visible.sync="dialogVisible"
+      :close-on-click-modal="false"
       :before-close="handleClose">
       <jvs-form :option="formOption" :formData="rowData" @submit="submitHandle"></jvs-form>
     </el-dialog>
@@ -38,8 +39,8 @@ export default {
         addBtn: false,
         editBtn: false,
         viewBtn: false,
-        align: "center",
-        menuAlign: "center",
+        // align: "center",
+        // menuAlign: "center",
         menu: false,
         page: true,
         search: true,

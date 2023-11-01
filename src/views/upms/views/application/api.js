@@ -43,3 +43,14 @@ export const getAppById=(id) => {
   })
 }
 
+// 启用 禁用  应用
+export function enableDisApp(id, cancelFlag) {
+  let able = 'enable'
+  if(cancelFlag) {
+    able = 'disabled'
+  }
+  return request({
+    url: `/mgr/jvs-auth//apply/${able}/${id}`,
+    method: "delete"
+  });
+}

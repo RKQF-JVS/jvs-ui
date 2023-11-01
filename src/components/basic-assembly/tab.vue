@@ -1,5 +1,6 @@
 <template>
   <el-tabs
+    :ref="formItem.prop"
     v-model="activeName"
     :type="option.type || defaultOption.type"
     :tab-position="option.tabPosition || defaultOption.tabPosition"
@@ -50,7 +51,16 @@
                 :departmentList="departmentList"
                 :postList="postList"
                 :resetRadom="resetRadom"
-                @formChange="formChange" />
+                :designId="designId"
+                :isView="isView"
+                :changeRandom="changeRandom"
+                :changeDomItem="changeDomItem"
+                :execsList="execsList"
+                :jvsAppId="jvsAppId"
+                :originForm="originForm"
+                :parentDomWidth="parentDomWidth"
+                @formChange="formChange(forms[item.name], it)"
+                @reInitData="reInitData" />
             </el-form-item>
             <!-- 子表单项 -->
             <el-row v-if="it.type != 'formbox' && it.children && it.children.length > 0">
@@ -68,12 +78,21 @@
                   :item="it"
                   :originOption="originOption"
                   :defalutSet="defalutSet"
-                  @formChange="formChange"
+                  @formChange="formChange(forms[item.name], it)"
                   :roleOption="roleOption"
                   :userList="userList"
                   :departmentList="departmentList"
                   :postList="postList"
+                  :designId="designId"
                   :resetRadom="resetRadom"
+                  :isView="isView"
+                  :changeRandom="changeRandom"
+                  :changeDomItem="changeDomItem"
+                  :execsList="execsList"
+                  :jvsAppId="jvsAppId"
+                  :originForm="originForm"
+                  :parentDomWidth="parentDomWidth"
+                  @reInitData="reInitData"
                 />
                 <!-- 自定义列插槽 -->
                 <div v-if="it.formSlot">
@@ -118,12 +137,21 @@
                     :formRef="defalutSet.refs"
                     :originOption="originOption"
                     :defalutSet="defalutSet"
-                    @formChange="formChange"
+                    @formChange="formChange(forms[item.name], it)"
                     :roleOption="roleOption"
                     :userList="userList"
                     :departmentList="departmentList"
                     :postList="postList"
                     :resetRadom="resetRadom"
+                    :designId="designId"
+                    :isView="isView"
+                    :changeRandom="changeRandom"
+                    :changeDomItem="changeDomItem"
+                    :execsList="execsList"
+                    :jvsAppId="jvsAppId"
+                    :originForm="originForm"
+                    :parentDomWidth="parentDomWidth"
+                    @reInitData="reInitData"
                   />
                   <!-- 自定义列插槽 -->
                   <div v-if="itc.formSlot">
@@ -158,6 +186,8 @@
 </template>
 <script>
 import FormItem from './formitem'
+import {doExec} from '@/components/basic-container/formula/api'
+import {dataModelTriggering} from '@/components/api'
 export default {
   name: "jvs-tab",
   components: {FormItem},
@@ -228,6 +258,24 @@ export default {
     },
     resetRadom: {
       type: Number
+    },
+    designId: {
+      type: String
+    },
+    isView: {
+      type: Boolean
+    },
+    changeRandom: {
+      type: Number
+    },
+    changeDomItem: {
+      type: Object
+    },
+    execsList: {
+      type: Array
+    },
+    jvsAppId:  {
+      type: String
     }
   },
   data () {
@@ -262,7 +310,8 @@ export default {
           cancalBtnText: '取消', // 取消按钮文字， 默认 取消
         }
       },
-      initData: ""
+      initData: "",
+      parentDomWidth: 0
     }
   },
   created () {
@@ -271,6 +320,12 @@ export default {
       this.activeName = this.active
     }
     this.initData = JSON.stringify(this.forms)
+  },
+  mounted () {
+    if(this.$refs[this.formItem.prop]) {
+      this.parentDomWidth = this.$refs[this.formItem.prop].$el.offsetWidth
+      this.$forceUpdate()
+    }
   },
   methods: {
     handleClick (tab, event) {
@@ -323,10 +378,52 @@ export default {
       this.option.column = this.option.column.filter(item => item.show)
     },
     // 值变化
-    formChange (form) {
-      this.$set(this.forms, this.activeName, form)
-      this.$forceUpdate()
-      this.$emit('formChange', this.forms)
+    async formChange (form, item) {
+      if(this.isView === true) {
+        this.$emit('formChange', this.forms, item)
+      }else{
+        this.$emit('formChange', this.forms, item)
+        return false
+        if([false, null, undefined, ""].indexOf(form) == -1 && this.designId) {
+          if(this.dataModelId) {
+            await  dataModelTriggering(this.designId, this.dataModelId, form).then(res => {
+              if(res.data && res.data.code == 0) {
+                if(res.data.data) {
+                  for(let i in res.data.data) {
+                    this.$set(form, i , res.data.data[i])
+                  }
+                  // 公式
+                  doExec('jvs-design', this.designId, 'formItemValue', {parentPath: item.parentKey ? item.parentKey.split('.') : '', modifiedField: item.prop, params: form}).then(res => {
+                    if(res.data && res.data.code == 0) {
+                      if(res.data.data) {
+                        for(let i in res.data.data) {
+                          this.$set(form, i , res.data.data[i])
+                        }
+                      }
+                      this.$set(this.forms, this.activeName, form)
+                      this.$forceUpdate()
+                      this.$emit('formChange', this.forms)
+                    }
+                  })
+                }
+              }
+            })
+          }else{
+            await doExec('jvs-design', this.designId, 'formItemValue', {parentPath: item.parentKey ? item.parentKey.split('.') : '', modifiedField: item.prop, params: form}).then(res => {
+              if(res.data && res.data.code == 0) {
+                if(res.data.data) {
+                  for(let i in res.data.data) {
+                    this.$set(form, i , res.data.data[i])
+                  }
+                  this.$set(this.forms, this.activeName, form)
+                  this.$forceUpdate()
+                  this.$emit('formChange', this.forms)
+                }
+              }
+            })
+          }
+        }
+      }
     },
     // 联动控制
     linkbindHandle (val, bind) {
@@ -388,7 +485,7 @@ export default {
           }
         }
         if(temp.length > 0) {
-          if(eval(temp.join(' || '))) {
+          if(eval(temp.join(` ${item.showOperator || '||'} `))) {
             bool = true
           }
         }
@@ -396,7 +493,74 @@ export default {
         bool = true
       }
       return bool
-    }
+    },
+    reInitData (prop, parentKey, index, tableType) {
+      this.$emit('reInitData', prop, parentKey, index, tableType)
+      return false
+      if(typeof prop == 'string') {
+        this.dataInitHandle(prop, parentKey)
+      }else{
+        if(prop) {
+          this.$emit('reInitData', this.formItem.prop, this.formItem.parentKey)
+        }
+      }
+    },
+    // 内部触发联动公式
+    dataInitHandle (prop, parentKey) {
+      if(this.designId) {
+        if(this.dataModelId) {
+          dataModelTriggering(this.jvsAppId, this.designId, this.dataModelId, this.forms).then(res => {
+            if(res.data && res.data.code == 0) {
+              if(res.data.data) {
+                for(let i in res.data.data) {
+                  this.$set(this.formDatas, i , res.data.data[i])
+                }
+                // 公式
+                let obp = {
+                  params: this.forms
+                }
+                if(prop) {
+                  obp.modifiedField = prop
+                }
+                if(parentKey) {
+                  obp.parentKey = parentKey.split('.')
+                }
+                doExec('jvs-design', this.designId, 'formItemValue', obp).then(res => {
+                  if(res.data && res.data.code == 0) {
+                    if(res.data.data) {
+                      for(let i in res.data.data) {
+                        this.$set(this.forms, i , res.data.data[i])
+                      }
+                    }
+                    this.$emit('reInitData', this.formItem.prop, this.formItem.parentKey)
+                  }
+                })
+              }
+            }
+          })
+        }else{
+          let obp = {
+            params: this.formDatas
+          }
+          if(prop) {
+            obp.modifiedField = prop
+          }
+          if(parentKey) {
+            obp.parentKey = parentKey.split('.')
+          }
+          doExec('jvs-design', this.designId, 'formItemValue', obp).then(res => {
+            if(res.data && res.data.code == 0) {
+              if(res.data.data) {
+                for(let i in res.data.data) {
+                  this.$set(this.formDatas, i , res.data.data[i])
+                }
+              }
+              this.$emit('reInitData', this.formItem.prop, this.formItem.parentKey)
+            }
+          })
+        }
+      }
+    },
   },
   watch: {
     resetRadom: {

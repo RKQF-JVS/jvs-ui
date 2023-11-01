@@ -43,7 +43,7 @@ export default {
     }
     .title{
         font-size: 18px;
-        font-family: Source Han Sans CN;
+        font-family: MiSans-Demibold;
         font-weight: 600;
         color: #222222;
         margin-left: 14PX;

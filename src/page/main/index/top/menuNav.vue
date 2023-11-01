@@ -10,8 +10,10 @@
       <div class="item" @click="closeAllTags">关闭全部</div>
     </div>
     <!-- :closable="tagLen!==1" -->
-    <i v-if="showHide" class="showhide-menu-icon el-icon-s-unfold" @click="setCollapse"></i>
-    <i v-else class="showhide-menu-icon el-icon-s-fold" @click="setCollapse"></i>
+    <i class="showhide-menu-icon"></i>
+    <!-- 暂时屏蔽 -->
+    <!-- <i v-if="showHide" class="showhide-menu-icon el-icon-s-unfold" @click="setCollapse"></i>
+    <i v-else class="showhide-menu-icon el-icon-s-fold" @click="setCollapse"></i> -->
     <el-tabs
       v-model="active"
       type="card"

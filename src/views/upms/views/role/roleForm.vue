@@ -5,13 +5,14 @@
       :title="title"
       :visible.sync="dialogVisible"
       :before-close="handleClose"
-      :close-on-click-modal='true'
+      :close-on-click-modal='false'
       :close-on-press-escape='true'
     >
       <el-form
         ref="form"
         :model="form"
         label-width="80px"
+        label-position="top"
         :rules="rules"
       >
         <el-form-item
@@ -36,6 +37,12 @@
             v-model="form.roleDesc"
             size="mini"
           ></el-input>
+        </el-form-item>
+        <el-form-item
+          label="加入组织后是否自动赋予该权限"
+          prop="autoGrant"
+        >
+          <el-switch v-model="form.autoGrant"></el-switch>
         </el-form-item>
       </el-form>
       <span

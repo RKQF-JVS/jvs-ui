@@ -1,7 +1,7 @@
 export const tableOption = {
   page: false,
-  align: 'center',
-  menuAlign: 'center',
+  // align: 'center',
+  // menuAlign: 'center',
   viewBtn: false,
   addBtn: false,
   editBtn: false,
@@ -13,10 +13,10 @@ export const tableOption = {
   isSearch: true,
   labelWidth: 'auto',
   submitBtnText: '查询',
-  menuWidth: '250px',
+  menuWidth: '150px',
   cancal: false,
   hideTop: true,
-  menuWidth: 100,
+  // menuWidth: 100,
   column: [
     {
       label: '头像',
@@ -31,6 +31,16 @@ export const tableOption = {
     {
       label: '邮箱',
       prop: 'email',
+      slot: true
+    },
+    {
+      label: '终端名称',
+      prop: 'clientName',
+      slot: true
+    },
+    {
+      label: '有效时间',
+      prop: 'expiration',
       slot: true
     },
     {

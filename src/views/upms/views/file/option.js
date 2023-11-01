@@ -1,7 +1,7 @@
 export const tableOption={
   page: true,
-  align: 'center',
-  menuAlign: 'center',
+  // align: 'center',
+  // menuAlign: 'center',
   viewBtn: false,
   addBtn: false,
   editBtn: false,
@@ -29,10 +29,16 @@ export const tableOption={
       prop: 'bucketName',
       type: 'select',
       dicData: [],
-      search: true,
+      search: false,
       searchSpan: 4,
       filterable: true,
       allowcreate: true
+    },
+    {
+      label: '文件名',
+      prop: 'fileName',
+      search: true,
+      searchSpan: 4
     },
     {
       label: '文件路径',

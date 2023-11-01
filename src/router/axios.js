@@ -2,6 +2,7 @@ import { serialize, noEmptyOfObject } from "@/util/util";
 import { getStore } from "../util/store";
 import NProgress from "nprogress"; // progress bar
 import errorCode from "@/const/errorCode";
+import { authCode,authErrorCode } from "@/const/errorCode";
 import router from "@/router/router";
 import { Message } from "element-ui";
 import "nprogress/nprogress.css";
@@ -28,7 +29,7 @@ const whiteApi = ['/auth/token/logout']
 // HTTPrequest拦截
 axios.interceptors.request.use(
     config => {
-        NProgress.start(); // start progress bar
+        // NProgress.start(); // start progress bar
         const isToken = (config.headers || {}).isToken === false;
         let token = store.getters.access_token;
         let tenantId = store.getters.tenantId;
@@ -39,17 +40,17 @@ axios.interceptors.request.use(
             // }
         }
         // 添加请求头 固定参数
-        // config.headers["jvs-rule-ua"] = encodeURI('肖辉') // encodeURI('郭静')
+        config.headers["jvs-rule-ua"] = encodeURI('2.1.5') //
         // headers中配置serialize为true开启序列化
         if (config.methods === "post" && config.headers.serialize) {
             config.data = serialize(config.data);
             delete config.data.serialize;
         }
-        // 去除空值参数
+        // 去除空值参数wori
         if (config.params) {
             config.params = noEmptyOfObject(config.params)
         }
-        if (config.data) {
+        if (config.data && config.headers['type'] != 'FormData') {
             config.data = noEmptyOfObject(config.data)
         }
         return config;
@@ -82,10 +83,12 @@ axios.interceptors.response.use(
         if (status !== 200 || res.data.code === 1) {
             if(res.config.url == freshTokenUrl) {
                 if(res.config.params && !res.config.params.switch) {
-                    Message({
-                        message: message,
-                        type: "error"
-                    });
+                    if(res.config.params.refresh_token) {
+                        Message({
+                            message: message,
+                            type: "error"
+                        });
+                    }
                 }
             }else{
                 Message({
@@ -95,9 +98,42 @@ axios.interceptors.response.use(
             }
             return Promise.reject(new Error(message));
         }else{
-
+            if(res.data.code == -3) {
+                sessionStorage.setItem('lastUrl', lastUrl)
+                if(!localStorage.getItem('hadRefresh')  || localStorage.getItem('hadRefresh') == '') {
+                    localStorage.setItem('hadRefresh', new Date().getTime())
+                    window.parent.postMessage({command: 'fresh'}, '*')
+                }else{
+                    store.dispatch("LogOut").then(() => {
+                        sessionStorage.setItem('lastUrl', lastUrl)
+                        router.push({ path: "/login" });
+                        window.parent.postMessage({command: 'loginOut'}, '*')
+                    });
+                }
+            }
         }
         if(res.data && res.data.code === -2) {
+            if(countTime == 1 && localStorage.getItem('hadRefresh') == 'yes') {
+                store.dispatch("LogOut").then(() => {
+                    sessionStorage.setItem('lastUrl', lastUrl)
+                    router.push({ path: "/login" });
+                    window.parent.postMessage({command: 'loginOut'}, '*')
+                });
+            }
+            if(countTime == 1 && (!localStorage.getItem('hadRefresh') || ( new Date().getTime() > localStorage.getItem('hadRefresh') ) )) {
+                sessionStorage.setItem('lastUrl', lastUrl)
+                store.dispatch('RefreshToken', store.getters.tenantId).then(res => {
+                    if(res && res.access_token) {
+                        location.reload()
+                    }
+                }).catch(e => {
+                    store.dispatch("LogOut").then(() => {
+                        sessionStorage.setItem('lastUrl', lastUrl)
+                        router.push({ path: "/login" });
+                        window.parent.postMessage({command: 'loginOut'}, '*')
+                    });
+                })
+            }
             if(res.config && whiteApi.indexOf(res.config.url) > -1) {
                 store.dispatch("LogOut").then(() => {
                     sessionStorage.setItem('lastUrl', lastUrl)
@@ -106,23 +142,6 @@ axios.interceptors.response.use(
                 });
             }else{
                 countTime += 1
-            }
-            let cancelArr = window.axiosCancel;
-            for(let i in cancelArr) {
-                delete window.axiosCancel[i]
-            }
-            if(countTime == 1) {
-                sessionStorage.setItem('lastUrl', lastUrl)
-                store.dispatch('RefreshToken', store.getters.tenantId).then(res => {
-                    // console.log(res)
-                    location.reload()
-                }).catch(e => {
-                    store.dispatch("LogOut").then(() => {
-                        sessionStorage.setItem('lastUrl', lastUrl)
-                        router.push({ path: "/login" });
-                        window.parent.postMessage({command: 'loginOut'}, '*')
-                    });
-                })
             }
             return res
         }else{
@@ -139,6 +158,14 @@ axios.interceptors.response.use(
                         type: "error"
                     });
                     return Promise.reject(new Error(message));
+                // 如果授权码需要返回请在请求体上加上isReturn:true
+                }else if(authErrorCode.indexOf(res.data.code+'')!=-1 && !res.config.isReturn){
+                  const authMessage = res.data.msg || authCode[res.data.code+'']
+                  Message({
+                    message:  authMessage,
+                    type: "error"
+                  });
+                  return Promise.reject(new Error(authMessage));
                 }else{
                     if(res.config && res.config.url && res.config.url.startsWith('/mgr') && typeof res.data.data == 'string') {
                         let tp = {
@@ -158,6 +185,9 @@ axios.interceptors.response.use(
     },
     error => {
         NProgress.done();
+        if(axios.isCancel(error)) {
+            return new Promise( () => {})
+        }
         return Promise.reject(new Error(error));
         // return Promise.reject(new Error("fail")).then(resolved, rejected);
     }

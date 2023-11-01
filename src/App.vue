@@ -10,10 +10,12 @@
   import { mapGetters, mapMutations } from 'vuex'
   import {simpleStyle, darkblueStyle, darkredStyle} from '@/const/newTheme' // '@/const/theme'
   import { getStore } from "@/util/store.js";
+  import './assets/fonts/font.scss';
   // constants
   import * as globalTypes from '@/store/types/global'
   import bus from '@/util/vuebus'
   import {getTenantInfo} from '@/api/admin/home'
+  import { getDomain } from "@/api/login"
   export default {
     name: 'app',
     data() {
@@ -24,51 +26,48 @@
     watch: {},
     created() {
       // 切换租户了设置主题
-      if(getStore({name: 'tenantId'})) {
-        getTenantInfo().then(res => {
-          if(res.data.code == 0) {
-            this.$store.commit("SET_TENANTINFO", res.data.data)
-            if(res.data.data.themeStyle) {
-              let temp = JSON.parse(res.data.data.themeStyle)
-              if(temp.themeStyle) {
-                let obj = JSON.parse(temp.themeStyle)
-                let name = obj.name
-                let params = obj.params
-                this.$store.commit("SET_THEME_NAME", name)
-                this.$store.commit("SET_THEME", params)
+      if(window.self == window.top) {
+        if(getStore({name: 'tenantId'})) {
+          getTenantInfo().then(res => {
+            if(res.data.code == 0) {
+              this.$store.commit("SET_TENANTINFO", res.data.data)
+              if(res.data.data.themeStyle) {
+                let temp = JSON.parse(res.data.data.themeStyle)
+                if(temp.themeStyle) {
+                  let obj = JSON.parse(temp.themeStyle)
+                  let name = obj.name
+                  let params = obj.params
+                  this.$store.commit("SET_THEME_NAME", name)
+                  this.$store.commit("SET_THEME", params)
+                }
               }
+              this.getDomainHandle()
+              // 默认设置深蓝主题
+              if(!getStore({name: 'themeName'})) {
+                this.$store.commit("SET_THEME_NAME", darkblueStyle.theme)
+                this.$store.commit("SET_THEME", darkblueStyle.params)
+              }
+              this.changeTheme()
             }
-            if(res.data.data.icon) {
-              var link = document.createElement('link')
-              link.type = 'image/x-icon'
-              link.rel = 'shortcut icon'
-              link.href = res.data.data.icon
-              document.getElementsByTagName('head')[0].appendChild(link);
-            }
+          }).catch(e => {
             // 默认设置深蓝主题
             if(!getStore({name: 'themeName'})) {
               this.$store.commit("SET_THEME_NAME", darkblueStyle.theme)
               this.$store.commit("SET_THEME", darkblueStyle.params)
             }
             this.changeTheme()
-          }
-        }).catch(e => {
+          })
+        }else{
           // 默认设置深蓝主题
           if(!getStore({name: 'themeName'})) {
             this.$store.commit("SET_THEME_NAME", darkblueStyle.theme)
             this.$store.commit("SET_THEME", darkblueStyle.params)
           }
           this.changeTheme()
-        })
-      }else{
-        // 默认设置深蓝主题
-        if(!getStore({name: 'themeName'})) {
-          this.$store.commit("SET_THEME_NAME", darkblueStyle.theme)
-          this.$store.commit("SET_THEME", darkblueStyle.params)
         }
-        this.changeTheme()
       }
       this.$consoleImage()
+      window.addEventListener('beforeunload', e => this.beforeunloadFn(e))
     },
     methods: {
       ...mapMutations({
@@ -324,6 +323,25 @@
       },
       goBack () {
         history.pushState(null, null, document.URL)
+      },
+      // 获取域名对应设置信息
+      getDomainHandle () {
+        getDomain().then(res => {
+          if(res.data && res.data.code == 0) {
+            if(res.data.data){
+              if(res.data.data.icon) {
+                var link = document.createElement('link')
+                link.type = 'image/x-icon'
+                link.rel = 'shortcut icon'
+                link.href = res.data.data.icon
+                document.getElementsByTagName('head')[0].appendChild(link);
+              }
+            }
+          }
+        })
+      },
+      beforeunloadFn (e) {
+        this.$store.commit("DEL_TAG_OTHER");
       }
     },
     computed: {
@@ -344,6 +362,7 @@
     },
     destroyed () {
       window.removeEventListener('popstate', this.goBack, false)
+      window.removeEventListener('beforeunload', e => this.beforeunloadFn(e))
     }
   }
 </script>
@@ -365,6 +384,7 @@
     z-index: 9999999999999;
   }
   .theme-box {
+    font-family: MiSans-Demibold;
     width: 100%;
     height: 100%;
   }

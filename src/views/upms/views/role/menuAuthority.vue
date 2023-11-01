@@ -1,71 +1,88 @@
 <template>
-  <div>
-    <el-dialog
-      :visible.sync="menuAuthVisible"
-      :before-close="handleClose"
-      :fullscreen="true"
-      append-to-body
-      title="权限分配"
-      class="transverseTreeDialog"
-    >
+  <el-dialog
+    :visible.sync="menuAuthVisible"
+    :before-close="handleClose"
+    :fullscreen="true"
+    append-to-body
+    title="权限分配"
+    class="menuAuthorityDialog"
+    :close-on-click-modal="false"
+  >
+    <div class="application-list">
       <!-- 应用终端 -->
-      <div class="application-list">
-        <jvs-button v-for="item in terminalList" :type="item.id == currentTerminal ? 'primary' : ''" :key="item.name" @click="activeHandle(item)">{{item.name}}</jvs-button>
-        <p class="divider-line"></p>
-      </div>
-      <div class="menu-checkbox">
-        <el-checkbox-group id="menuGroup" v-model="checkList">
-          <el-checkbox class="checkbox-text" v-for="(item, key) in funOption" :key="key" :label="item.id" @change="handleCheckMenu(item)">{{ item.name }}</el-checkbox>
-        </el-checkbox-group>
-      </div>
-      <div class="menu-auth-box" :style="`height: calc(100% - 188px - ${String(menuGroupHeight)}px)`">
-        <div class="left-part">
-          <div v-for="(item, key) in menuList" :key="key" :class="{'left-part-item ': true, 'is-current': (rowId.id == item.id)}" @click="nodeClick(item)">
-<!--            <el-checkbox v-model="item.checked" @change="nodeClick(item)"></el-checkbox>-->
-            <div style="margin-left: 8px; font-size: 16px">{{item.name}}</div>
-          </div>
-        </div>
-        <div style="width: 1px;height: 100%;background-color: #DCDFE6"/>
-        <div class="right-part">
-          <el-collapse v-model="activeNames">
-            <div class="right-part-submenu" v-for="(item, key) in subMenuList" :key="key">
-              <el-checkbox-group v-model="checkList">
-                <el-checkbox class="submenu-check-all" :label="item.id" @change="subMenuCheck(item)">{{ item.name }}</el-checkbox>
-              </el-checkbox-group>
-              <el-collapse-item :title="item.name" :name="item.id">
-                <div class="three-level-menu">
-                  <div v-for="(menuItem, key) in (item.children || [])" :key="key">
-                    <div class="menu-item">
-                      <el-checkbox-group style="margin-right: 80px" v-model="checkList">
-                        <el-checkbox :label="menuItem.id" @change="menuItemCheck(menuItem)">{{ menuItem.name }}</el-checkbox>
-                      </el-checkbox-group>
-                      <el-checkbox-group v-model="checkList">
-                        <el-checkbox
-                          :label="btnItem.id"
-                          v-for="(btnItem, key) in (menuItem.extend || [])"
-                          :key="key"
-                          style="width: 100px"
-                          @change="btnItemCheck(btnItem)"
-                        >{{ btnItem.name }}</el-checkbox>
-                      </el-checkbox-group>
-                    </div>
-                  </div>
-                </div>
-              </el-collapse-item>
-            </div>
-          </el-collapse>
+      <div class="terminal-check-box">
+        <div class="terminal-title">应用模块</div>
+        <div class="terminal-check-list" v-for="(item, key) in terminalList" :key="key" >
+          <div class="terminal-node" @click="terminalClick(item)" :style="currentApp === item.name ? 'color: #3e78fd;' : ''">{{ item.name }}</div>
         </div>
       </div>
-      <el-row style="display: flex;align-items: center;justify-content: center;background: #fff;padding:10px 0;">
-        <el-button size="mini" type="primary" @click="saveHandle">确 定</el-button>
-        <el-button size="mini" @click="handleClose">取 消</el-button>
-      </el-row>
-    </el-dialog>
-  </div>
+      <!-- 一级菜单 -->
+      <div class="terminal-check-box">
+        <div class="terminal-title">一级菜单</div>
+        <el-checkbox
+          v-if="menuList.length > 0"
+          :indeterminate="isMenuIndeterminate"
+          v-model="menuCheckAll"
+          @change="handleMenuCheckAll(menuCheckAll, 'menu')"
+        >全选</el-checkbox>
+        <div class="terminal-check-list" v-for="(item, key) in menuList" :key="key" >
+          <el-checkbox v-model="menuAuthListTemp" :label="item.id" @change="menuChange">{{ '' }}</el-checkbox>
+          <div class="terminal-node" @click="menuClick(item)" :style="currentMenu === item.name ? 'color: #3e78fd;' : ''">{{ item.name }}</div>
+        </div>
+      </div>
+      <!-- 菜单分组 -->
+      <div class="terminal-check-box">
+        <div class="terminal-title">菜单分组</div>
+        <el-checkbox
+          v-if="menuGroupList.length > 0"
+          :indeterminate="isMenuGroupIndeterminate"
+          v-model="menuGroupCheckAll"
+          @change="handleMenuCheckAll(menuGroupCheckAll, 'menuGroup')"
+        >全选</el-checkbox>
+        <div class="terminal-check-list" v-for="(item, key) in menuGroupList" :key="key" >
+          <el-checkbox v-model="menuAuthListTemp" :label="item.id" @change="menuGroupChange">{{ '' }}</el-checkbox>
+          <div class="terminal-node" @click="menuGroupClick(item)" :style="currentMenuGroup === item.name ? 'color: #3e78fd;' : ''">{{ item.name }}</div>
+        </div>
+      </div>
+      <!-- 功能模块 -->
+      <div class="terminal-check-box">
+        <div class="terminal-title">功能模块</div>
+        <el-checkbox
+          v-if="functionList.length > 0"
+          :indeterminate="isFunctionIndeterminate"
+          v-model="functionCheckAll"
+          @change="handleMenuCheckAll(functionCheckAll, 'function')"
+        >全选</el-checkbox>
+        <div class="terminal-check-list" v-for="(item, key) in functionList" :key="key" >
+          <el-checkbox v-model="menuAuthListTemp" :label="item.id" @change="functionChange">{{ '' }}</el-checkbox>
+          <div class="terminal-node" @click="functionClick(item)" :style="currentFunction === item.name ? 'color: #3e78fd;' : ''">{{ item.name }}</div>
+        </div>
+      </div>
+      <!-- 功能按钮 -->
+      <div class="terminal-check-box">
+        <div class="terminal-title">功能按钮</div>
+        <el-checkbox
+          v-if="functionButtonList.length > 0"
+          :indeterminate="isFunctionButtonIndeterminate"
+          v-model="functionButtonCheckAll"
+          @change="handleMenuCheckAll(functionButtonCheckAll, 'functionButton')"
+        >全选</el-checkbox>
+        <div class="terminal-check-list" v-for="(item, key) in functionButtonList" :key="key" >
+          <el-checkbox v-model="menuAuthListTemp" :label="item.id" @change="functionButtonChange">{{ '' }}</el-checkbox>
+          <div class="terminal-node" @click="functionButtonClick(item)" :style="currentFunctionButton === item.name ? 'color: #3e78fd;' : ''">{{ item.name }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-button">
+      <el-button size="mini" type="primary" @click="saveHandle">确 定</el-button>
+      <el-button size="mini" @click="handleClose">取 消</el-button>
+    </div>
+  </el-dialog>
 </template>
 
 <script>
 import {bindMenuAuth, getAllMenu, getMenuAuth} from "./api";
+import { difference } from 'lodash'
 
 export default {
   name: "menuAuthority",
@@ -114,174 +131,216 @@ export default {
     }
   },
   watch: {
-    currentTerminal (val) {
-      this.menuAuthListTemp = [...this.menuAuthList]
-      this.initAuth([...this.funOption])
-    },
     menuAuthVisible(val) {
       if (val) {
         this.$nextTick(() => {
-          this.initAuth([...this.funOption])
-          this.menuGroupHeight = document.getElementById('menuGroup').clientHeight
+          this.menuAuthListTemp = [...this.menuAuthList].map(item => {
+            return item.permissionId
+          })
         })
       }
     }
   },
   data () {
     return {
+      currentApp: '', // 当前点击的应用模块
+      currentMenu: '', // 当前点击的一级菜单
+      currentMenuGroup: '', // 当前点击的菜单分组
+      currentFunction: '', // 当前点击的功能模块
+      currentFunctionButton: '', // 当前点击的功能按钮
+      menuCheckAll: false,
+      isMenuIndeterminate: false,
+      menuGroupCheckAll: false,
+      isMenuGroupIndeterminate: false,
+      functionCheckAll: false,
+      isFunctionIndeterminate: false,
+      functionButtonCheckAll: false,
+      isFunctionButtonIndeterminate: false,
       checked: false,
       rowId: {},
+      menuGroupList: [],
+      menuGroupCheckList: [],
+      functionButtonList: [],
+      functionButtonCheckList: [],
+      functionList: [],
+      functionCheckList: [],
       menuList: [],
-      checkList: [],
-      subMenuList: [],
-      threeLevelMenuList: [],
+      menuCheckList: [],
+      terminalCheckList: [],
       menuAuthListTemp: [],
-      activeNames: [],
       arrTemp: [],
-      menuGroupHeight: 0
     }
   },
   methods: {
-    // 根据权限列表勾选权限
-    initAuth(arry) {
-      const list = []
-      const arr = []
-      this.menuAuthList.forEach(item => {
-        list.push(item.permissionId)
-        const index = arry.findIndex(obj => {
-          return obj.id === item.permissionId
+    // 数组去重
+    uniqueArr(arr) {
+      return Array.from(new Set(arr))
+    },
+    // 数组合并
+    concatArr(arr1, arr2) {
+      const arr = arr1.concat(arr2)
+      return this.uniqueArr(arr)
+    },
+    /**
+     * 多选框 change 事件
+     * @param {String} type 多选框类型 (menu: '一级菜单', menuGroup: '菜单分组', function: '功能模块', functionButton: '功能按钮')
+     * @param {Array} checkList 多选框数据源
+     * @param {Array} menuAuthListTemp 当前已选中的权限数据列表
+     **/
+    checkChange(type, checkList, menuAuthListTemp) {
+      let count = 0
+      checkList.forEach(item => {
+        const index = menuAuthListTemp.findIndex(temp => {
+          return item.id === temp
         })
-        if (index !== -1) {
-          arr.push(arry[index])
+        if (index > -1) {
+          count ++
         }
       })
-      this.checkList = [...list]
-      this.menuList = [...arr]
-    },
-    // 二级菜单 check
-    subMenuCheck(obj) {
-      const index = this.activeNames.findIndex(item => {
-        return item === obj.id
-      })
-      if (index === -1) {
-        this.activeNames.push(obj.id)
-      }
-      this.setCheckStatus(obj)
-      this.$forceUpdate()
-    },
-    // 设置check框状态
-    setCheckStatus(obj) {
-      if (obj.extend) {
-        obj.extend.forEach(item => {
-          item.checked = obj.checked
-        })
-      }
-      if (obj.children) {
-        obj.children.forEach(item => {
-          item.checked = obj.checked
-          if (item.extend) {
-            this.setCheckStatus(item)
-          }
-        })
-      }
-    },
-    // 一级菜单check框选择
-    handleCheckMenu(obj) {
-      if (!obj.checked) {
-        const objTemp = {
-          permissionId: obj.id,
-          roleId: this.rowData.id,
-          type: 'menu'
-        }
-        this.menuAuthListTemp.push(objTemp)
+      let checkAll = false
+      let isIndeterminate = false
+      if (count === checkList.length) {
+        checkAll = true
+        isIndeterminate = false
       } else {
-        const index = this.menuAuthListTemp.findIndex(item => {
-          return item.permissionId === obj.id
-        })
-        if (index !== -1) {
-          this.menuAuthListTemp.splice(index, 1)
-        }
+        checkAll = false
+        isIndeterminate = count !== 0
       }
-      if (obj.checked && obj.id === this.rowId.id) {
-        this.subMenuList = []
-        this.rowId = {}
+      switch (type) {
+        case 'menu':
+          this.menuCheckAll = checkAll;
+          this.isMenuIndeterminate = isIndeterminate;
+          break;
+        case 'menuGroup':
+          this.menuGroupCheckAll = checkAll;
+          this.isMenuGroupIndeterminate = isIndeterminate;
+          break;
+        case 'function':
+          this.functionCheckAll = checkAll;
+          this.isFunctionIndeterminate = isIndeterminate;
+          break;
+        case 'functionButton':
+          this.functionButtonCheckAll = checkAll;
+          this.isFunctionButtonIndeterminate = isIndeterminate;
+          break;
+        default: break;
       }
-      const arr = [...this.checkList]
-      const arrTemp = [...this.funOption]
-      arrTemp.forEach((item, key) => {
-        const index = arr.findIndex(temp => {
-          return temp === item.id
-        })
-        item.checked = index !== -1
-      })
-      const menuList = arrTemp.filter(item => {
-        return item.checked
-      })
-      this.menuList = [...menuList]
     },
-    // 按钮权限 check
-    btnItemCheck(obj) {
-      this.$forceUpdate()
-    },
-    // 三级菜单 check
-    menuItemCheck(obj) {
-      if (obj.extend.length > 0 && obj.checked) {
-        obj.extend.forEach(item => {
-          item.checked = true
-        })
+    // 获取全选/取消全选后的权限列表
+    getNewAuthList(val, type, arr1, arr2) {
+      arr1 = [...arr1].map(item => {
+        return item.id
+      })
+      if (val) {
+        this.menuAuthListTemp = [...this.concatArr(arr1, arr2)]
       } else {
-        obj.extend.forEach(item => {
-          item.checked = false
-        })
+        this.menuAuthListTemp = difference([...arr2], [...arr1])
       }
-      this.$forceUpdate()
+      },
+    // 全选/取消全选
+    handleMenuCheckAll(val, type) {
+      let arr = []
+      switch (type) {
+        case 'menu':
+          arr = this.menuList
+          this.isMenuIndeterminate = false;
+          break;
+        case 'menuGroup':
+          arr = this.menuGroupList
+          this.isMenuGroupIndeterminate = false;
+          break;
+        case 'function':
+          arr = this.functionList
+          this.isFunctionIndeterminate = false;
+          break;
+        case 'functionButton':
+          arr = this.functionButtonList
+          this.isFunctionButtonIndeterminate = false;
+          break;
+        default: break;
+      }
+      this.getNewAuthList(val, type, arr, this.menuAuthListTemp)
     },
-    // 二级菜单 check
-    submenuClick(row) {
+    // 功能按钮多选框 change 事件
+    functionButtonChange() {
+      this.checkChange('functionButton', this.functionButtonList, this.menuAuthListTemp)
     },
-    // 一级菜单 click
-    nodeClick(row) {
-      this.rowId = row
-      this.subMenuList = row.children || []
-      this.$forceUpdate()
+    // 功能按钮 node 点击
+    functionButtonClick(data) {
+      this.currentFunctionButton= data.name
     },
-    // getList() {
-    //   getMenuAuth(this.rowData.id).then(res => {
-    //     if (res.data && res.data.code == 0) {
-    //     }
-    //   })
-    //   getAllMenu().then(res => {
-    //     if (res.data && res.data.code==0) {
-    //       this.applicationList = [...res.data.data]
-    //       this.terminalList = [...res.data.data]
-    //       this.currentTerminal = this.terminalList[0].id
-    //     }
-    //   })
-    // },
-    // 切换终端
-    async activeHandle (obj) {
-      await this.$emit('activeHandle', obj)
-      this.menuGroupHeight = document.getElementById('menuGroup').clientHeight
-      // console.log(this.funOption)
-      const index = this.funOption.findIndex(item => {
-        return this.rowId.id === item.id
-      })
-      this.subMenuList = []
-      const arrTemp = [...this.funOption]
-      const menuList = arrTemp.filter(item => {
-        return item.checked
-      })
-      this.menuList = [...menuList]
-      this.subMenuList = index !== -1 ? (this.rowId.children || []) : []
-      // this.subMenuList = this.funOption[index].children
+    // 功能模块多选框 change 事件
+    functionChange() {
+      this.checkChange('function', this.functionList, this.menuAuthListTemp)
+    },
+    // 功能模块 node 点击
+    functionClick(data) {
+      this.currentFunction = data.name
+      this.functionButtonList = data.extend ? [...data.extend] : []
+      this.checkChange('functionButton', this.functionButtonList, this.menuAuthListTemp)
+      this.currentFunctionButton = ''
+    },
+    // 菜单分组多选框 change 事件
+    menuGroupChange() {
+      this.checkChange('menuGroup', this.menuGroupList, this.menuAuthListTemp)
+    },
+    // 菜单分组 node 点击
+    menuGroupClick(data) {
+      this.currentMenuGroup = data.name
+      this.functionList = data.children ? [...data.children] : []
+      this.checkChange('function', this.functionList, this.menuAuthListTemp)
+      this.functionButtonList = []
+      this.currentFunction = ''
+      this.currentFunctionButton = ''
+    },
+    // 一级菜单多选框 change 事件
+    menuChange() {
+      this.checkChange('menu', this.menuList, this.menuAuthListTemp)
+    },
+    // 一级菜单 node 点击
+    menuClick(data) {
+      this.currentMenu = data.name
+      this.menuGroupList = data.children ? [...data.children] : []
+      this.checkChange('menuGroup', this.menuGroupList, this.menuAuthListTemp)
+      this.functionList = []
+      this.functionButtonList = []
+      this.currentMenuGroup = ''
+      this.currentFunction = ''
+      this.currentFunctionButton = ''
+    },
+    // 应用多选框 change 事件
+    terminalChange() {
+      console.log(this.terminalCheckList)
+    },
+    // 应用模块 node 点击
+    terminalClick(data) {
+      this.currentApp = data.name
+      this.menuList = data.children ? [...data.children] : []
+      this.checkChange('menu', this.menuList, this.menuAuthListTemp)
+      this.menuGroupList = []
+      this.functionList = []
+      this.functionButtonList = []
+      this.currentMenu = ''
+      this.currentMenuGroup = ''
+      this.currentFunction = ''
+      this.currentFunctionButton = ''
     },
     handleClose() {
+      this.menuList = []
+      this.menuGroupList = []
+      this.functionList = []
+      this.functionButtonList = []
+      this.currentApp = ''
+      this.currentMenu = ''
+      this.currentMenuGroup = ''
+      this.currentFunction = ''
+      this.currentFunctionButton = ''
       this.$emit('handleClose')
     },
     // 生成已勾选权限列表
     getSubmitAuthList(arr, arrTemp) {
       arr.forEach(item => {
-        const index1 = this.checkList.findIndex(obj => {
+        const index1 = this.menuAuthListTemp.findIndex(obj => {
           return obj === item.id
         })
         if (index1 !== -1) {
@@ -295,11 +354,11 @@ export default {
         if (item.children) {
           this.getSubmitAuthList(item.children, arrTemp)
         }
-        if (item.extend && item.children === undefined) {
+        if (Array.isArray(item.extend) && item.children === undefined) {
           this.getSubmitAuthList(item.extend, arrTemp)
         }
       })
-      this.menuAuthListTemp = [...this.arrTemp]
+      // this.menuAuthListTemp = [...this.arrTemp]
     },
     // 提交数据
     saveHandle() {
@@ -320,124 +379,52 @@ export default {
 </script>
 
 <style lang='scss' scoped>
-//@import url(); 引入公共css类
-.menu-auth-box {
-  //height: calc(100% - 208px);
-  overflow: hidden;
-  //overflow-y: auto;
-  background: #fff;
-  display: flex;
-  padding: 0 20px;
-  .left-part{
-    overflow-y: auto;
-    padding: 20px 0;
-    width: 15%;
-    .left-part-item{
-      display: flex;
-      align-items: center;
-      padding: 10px;
-    }:hover{
-    cursor: pointer;
-         }
-    .is-current{
-      background-color: #EFF2F7;
-    }
-  }
-  ::v-deep.right-part{
-    overflow-y: auto;
-    padding: 20px;
-    width: 85%;
-    .el-collapse{
-      border: none;
-    }
-    .right-part-submenu{
-      position: relative;
-      .submenu-check-all{
-        position: absolute;
-        left: 10px;
-        top: 10px;
-        .el-checkbox__label{
-          color: #606266;
-        }
-      }
-      .el-collapse-item__wrap{
-        border: none;
-      }
-      .el-collapse-item__header{
-        display: flex!important;
-        height: 40px;
-        border: none;
-        color: #f6f6f6;
-        background-color: #F6F6F6;
-        padding: 0 30px;
-      }
-      .submenu{
-        background-color: #F6F6F6;
-        font-size: 16px;
-        padding: 10px;
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-      }
-      .three-level-menu{
-        padding: 20px 10px;
-        .menu-item{
-          display: flex;
-          padding: 5px 0;
-          .el-checkbox__label{
-            color: #606266;
-          }
-          //.button-check-list{
-          //  margin-left: 80px;
-          //  .el-checkbox{
-          //    margin-bottom: 8px;
-          //    width: 8vw;
-          //  }
-          //}
-        }
-      }
-    }
-  }
-}
-.menu-checkbox{
-  background-color: #FFFFFF;
-  padding: 10px 20px 6px 20px;
-  ::v-deep.checkbox-text{
-    .el-checkbox__label{
-      color: #606266;
-    }
-  }
-  .el-checkbox{
-    margin-bottom: 8px;
-    //width: 6vw;
-  }
-}
 .application-list{
-  padding: 20px;
+  height: calc(100vh - 140px);
+  overflow: auto;
+  display: flex;
+  .terminal-check-box{
+    width: 200px;
+    .terminal-title{
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+    .el-checkbox-group{
+      display: flex;
+      flex-direction: column;
+    }
+    .terminal-check-list{
+      position: relative;
+      padding: 3px 0;
+      display: flex;
+      width: 160px;
+      .custom-tree-node-right{
+        display: none;
+        margin-right: 5px;
+      }
+      &:hover{
+        .custom-tree-node-right{
+          position: absolute;
+          cursor: pointer;
+          right: 0;
+          display: block;
+        }
+      }
+      .terminal-node{
+        cursor: pointer;
+        &:hover{
+          color: #3e78fd;
+        }
+      }
+    }
+  }
+}
+.footer-button{
   display: flex;
   align-items: center;
-  background: #fff;
-  position: relative;
-  .el-button{
-    border-color: transparent;
-    background: #F3F3F3;
-    color: #333333;
-    margin-left: 20px;
-  }
-  .el-button:nth-of-type(1){
-    margin-left: 0;
-  }
-  .el-button--primary{
-    background: #3471FF;
-    color: #fff;
-  }
-  .divider-line{
-    position: absolute;
-    width: calc(100% - 40px);
-    border-bottom: 1px solid #DCDFE6;
-    bottom: 0;
-    left: 20px;
-    margin: 0;
-  }
+  justify-content: center;
+  background: #ffffff;
+  padding: 10px 0;
 }
 </style>

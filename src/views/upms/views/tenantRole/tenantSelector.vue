@@ -6,6 +6,7 @@
     append-to-body
     width="780px"
     class="user-info-list-dialog"
+    :close-on-click-modal="false"
   >
     <div class="user-info-list" v-if="dialogVisible">
       <div class="center">
@@ -40,7 +41,7 @@
         </ul>
       </div>
     </div>
-    <el-row style="padding-top:20px;display:flex;justify-content:center;align-items:center;border-top: 1px solid #DCDFE6;">
+    <el-row style="padding-top:20px;display:flex;justify-content:center;align-items:center;border-top: 0px solid #DCDFE6;">
       <jvs-button size="mini" type="primary" @click="submit">确定</jvs-button>
       <jvs-button size="mini" @click="cancel">取消</jvs-button>
     </el-row>
@@ -256,6 +257,7 @@ export default {
           box-sizing: border-box;
           padding-right: 20px;
           padding-top: 13px;
+          border-right: 1px solid #DCDFE6;
           .el-tree{
             width: 100%;
             height: 100%;
@@ -267,9 +269,8 @@ export default {
           }
         }
         .center{
-          width: 280px;
+          width: 350px;
           padding: 0 20px;
-          border-left: 1px solid #DCDFE6;
           border-right: 1px solid #DCDFE6;
           box-sizing: border-box;
           .search-tool{
@@ -289,7 +290,7 @@ export default {
         .right{
           padding-left: 20px;
           box-sizing: border-box;
-          width: 240px;
+          width: 350px;
           h4{
             font-size: 14px;
             color: #868BA1;

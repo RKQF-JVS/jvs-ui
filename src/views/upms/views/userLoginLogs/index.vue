@@ -12,6 +12,7 @@
 </template>
 <script>
 import {getLogs} from './api'
+const endLimit = new Date().getFullYear()+'-'+( (new Date().getMonth()+1) > 9 ? (new Date().getMonth()+1) : ('0'+(new Date().getMonth()+1)) )+'-'+( new Date().getDate() > 9 ? new Date().getDate() : ('0'+new Date().getDate()))
 export default {
   data() {
     return {
@@ -27,8 +28,8 @@ export default {
         addBtn: false,
         editBtn: false,
         viewBtn: false,
-        align: "center",
-        menuAlign: "center",
+        // align: "center",
+        // menuAlign: "center",
         menu: false,
         page: true,
         search: true,
@@ -38,17 +39,27 @@ export default {
           {
             label: "账号",
             prop: "accountName",
-            search: true
+            search: true,
+            searchSpan: 6
           },
           {
             label: "姓名",
             prop: "realName",
-            search: true
+            search: true,
+            searchSpan: 6
+          },
+          {
+            label: "用户ID",
+            prop: "userId",
+            searchSpan: 6,
+            hide: true,
+            search: true,
           },
           {
             label: "登录类型",
             prop: "loginType",
-            search: true
+            search: true,
+            searchSpan: 6
           },
           {
             label: "IP",
@@ -56,7 +67,7 @@ export default {
           },
           {
             label: "终端",
-            prop: "clientId"
+            prop: "clientName",
           },
           {
             label: "设备",
@@ -65,6 +76,17 @@ export default {
           {
             label: "时间",
             prop: "operateTime"
+          },
+          {
+            label: "时间",
+            prop: "searchTime",
+            type: 'datePicker',
+            datetype: 'datetimerange',
+            searchSpan: 9,
+            hide: true,
+            search: true,
+            startLimit: "",
+            endLimit: endLimit
           }
         ]
       }
@@ -77,7 +99,27 @@ export default {
         size: this.page.pageSize,
         current: this.page.currentPage
       }
-      obj = Object.assign(obj, this.queryParams)
+      if(this.queryParams.accountName) {
+        obj.accountName = this.queryParams.accountName
+      }
+      if(this.queryParams.realName) {
+        obj.realName = this.queryParams.realName
+      }
+      if(this.queryParams.loginType) {
+        obj.loginType = this.queryParams.loginType
+      }
+      if(this.queryParams.clientId) {
+        obj.clientId = this.queryParams.clientId
+      }
+      if(this.queryParams.current) {
+        obj.current = this.queryParams.current
+      }
+      if(this.queryParams.searchTime && this.queryParams.searchTime.length > 0) {
+        obj.beginDate = this.queryParams.searchTime[0]
+        if(this.queryParams.searchTime.length > 1) {
+          obj.endDate = this.queryParams.searchTime[1]
+        }
+      }
       getLogs(obj).then(res => {
         if(res.data.code == 0) {
           this.tableLoading = false

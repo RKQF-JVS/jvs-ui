@@ -1,25 +1,51 @@
 <template>
   <div class="user-info-list">
-    <div>
-      <el-input size="mini" placeholder="请选择用户" :disabled="disableBool" v-model="userStr" class="input-with-select" @focus="enableinputHandle">
+    <div class="user-info-input-div">
+      <el-input size="mini" ref="userSelectInput" :placeholder="getPlaceholder(type)" :disabled="disableBool" v-model="userStr" class="input-with-select" @focus="enableinputHandle">
         <div slot="append" v-if="!disableBool">
           <jvs-button icon="el-icon-search" type="info" :disabled="disableBool" @click="openDialog"></jvs-button>
           <jvs-button icon="el-icon-delete" type="warning" :disabled="disableBool" @click="clearUser"></jvs-button>
         </div>
       </el-input>
     </div>
-    <userSeletor ref="userSelector" :autoClose="true" :selectable="selectable" :deptable="deptable" @submit="submit" @cancel="cancel"></userSeletor>
+<!--    <userSeletor-->
+<!--      ref="userSelector"-->
+<!--      :autoClose="true"-->
+<!--      :selectable="selectable"-->
+<!--      :deptable="deptable"-->
+<!--      @submit="submit"-->
+<!--      @cancel="cancel"-->
+<!--    ></userSeletor>-->
+    <userSeletor
+      ref="userSelector"
+      :user-enable="type === 'user'"
+      :role-enable="type === 'role'"
+      :dept-enable="type === 'department'"
+      :group-enable="type === 'group'"
+      :job-enable="type === 'job'"
+      :current-active-name="type === 'department' ? 'dept' : type"
+      :is-radio="!selectable"
+      :dialog-title="getDialogTitle(type)"
+      @submit="submit"
+      @cancel="cancel"
+    ></userSeletor>
   </div>
 </template>
 
 <script>
 import userSeletor from './userSelector'
+import { getUserInfoById, getUserInfoListByIds } from '@/api/admin/user'
+import { getUserListAll, getRoleList, getPostList} from "../api";
+import {getDeptList} from "@/views/upms/views/department/api";
 export default {
   name: "user-info-list",
   components: { userSeletor },
   props: {
     form: {
       type: Object
+    },
+    type: {
+      type: String
     },
     prop: {
       type: String
@@ -35,7 +61,8 @@ export default {
     },
     enableinput: {
       type: Boolean,
-      default: true
+      // default: true
+      default: false
     },
     disabled: {
       type: Boolean
@@ -48,6 +75,22 @@ export default {
     },
     resetRadom: {
       type: Number
+    },
+    infoable: {
+      // 多选结果是否返回完整用户信息
+      type: Boolean
+    },
+    userAllList: {
+      type: Array
+    },
+    departmentList: {
+      type: Array
+    },
+    roleOption: {
+      type: Array
+    },
+    postList: {
+      type: Array
     }
   },
   computed: {},
@@ -64,22 +107,61 @@ export default {
     return {
       userStr: '',
       userList: [],
+      tempList: [],
       userNameList: [],
       disableBool: false
     }
   },
   methods: {
+    getDialogTitle(type) {
+      if (type === 'user') {
+        return '用户选择'
+      }
+      if (type === 'role') {
+        return '角色选择'
+      }
+      if (type === 'department') {
+        return '部门选择'
+      }
+      if (type === 'group') {
+        return '群组选择'
+      }
+      if (type === 'job') {
+        return '岗位选择'
+      }
+    },
+    getPlaceholder(type) {
+      if (type === 'user') {
+        return '请选择用户'
+      }
+      if (type === 'role') {
+        return '请选择角色'
+      }
+      if (type === 'department') {
+        return '请选择部门'
+      }
+      if (type === 'group') {
+        return '请选择群组'
+      }
+      if (type === 'job') {
+        return '请选择岗位'
+      }
+    },
     submit (list) {
       if(this.selectable) {
         this.selectChange(list)
-        this.userStr = this.userNameList.join(',')
-        this.form[this.prop] = this.userList
+        this.$set(this, 'userStr', this.userNameList.join(','))
+        if(this.infoable) {
+          this.form[this.prop] = list
+        }else{
+          this.form[this.prop] = this.userList
+        }
       }else{
         if(list && list.length > 0) {
           this.form[this.prop] = list[0].id
-          this.userStr = list[0].realName
+          this.$set(this, 'userStr', list[0].name)
           if(this.props) {
-            this.form[this.props.label] = list[0].realName
+            this.form[this.props.label] = list[0].name
             this.form[this.props.value] = list[0].id
           }
         }
@@ -91,7 +173,7 @@ export default {
       let nm = []
       for(let i in data) {
         temp.push(data[i].id)
-        nm.push(data[i].realName)
+        nm.push(data[i].name)
       }
       this.userList = temp
       this.userNameList = nm
@@ -100,21 +182,120 @@ export default {
       this.$emit('cancel', bool)
     },
     openDialog () {
+      this.tempList = []
+      if (this.type === 'user' && this.userList.length > 0) {
+        const arr = [...this.userList]
+        this.$refs.userSelector.openDialog(arr)
+        return
+      }
+      if (this.type === 'department' && this.userList.length > 0) {
+        const arr = [...this.userList]
+        getDeptList().then(res => {
+          if (res.data && res.data.code == 0) {
+            arr.forEach(item => {
+              this.getSelectedDept(item, res.data.data)
+            })
+            this.$refs.userSelector.openDialog(this.tempList)
+          }
+        })
+        return
+      }
+      if (this.type == 'role' && this.selectable && this.form[this.prop].length > 0) {
+        if(this.roleOption && this.roleOption.length > 0) {
+          let tprole = []
+          this.roleOption.filter(ro => {
+            if(this.form[this.prop].indexOf(ro.id) > -1) {
+              tprole.push({id: ro.id, name: ro.roleName, type: 'role'})
+            }
+          })
+          this.userList = tprole
+          this.$refs.userSelector.openDialog([...this.userList])
+          return
+        }else{
+          getRoleList().then(res => {
+            if(res.data.code == 0) {
+              let tprole = []
+              res.data.data.filter(ro => {
+                if(this.form[this.prop].indexOf(ro.id) > -1) {
+                  tprole.push({id: ro.id, name: ro.roleName, type: 'role'})
+                }
+              })
+              this.userList = tprole
+              this.$refs.userSelector.openDialog([...this.userList])
+              return
+            }
+          })
+        }
+      }
+      if(this.type == 'job' && this.selectable  && this.form[this.prop].length > 0) {
+        if(this.postList && this.postList.length > 0) {
+          let tprole = []
+          this.postList.filter(ro => {
+            if(this.form[this.prop].indexOf(ro.id) > -1) {
+              tprole.push({id: ro.id, name: ro.name, type: 'job'})
+            }
+          })
+          this.userList = tprole
+          this.$refs.userSelector.openDialog([...this.userList])
+          return
+        }else{
+          getPostList().then(res => {
+            if(res.data.code == 0) {
+              let tprole = []
+              res.data.data.filter(ro => {
+                if(this.form[this.prop].indexOf(ro.id) > -1) {
+                  tprole.push({id: ro.id, name: ro.name, type: 'job'})
+                }
+              })
+              this.userList = tprole
+              this.$refs.userSelector.openDialog([...this.userList])
+              return
+            }
+          })
+        }
+      }
       this.$refs.userSelector.openDialog()
+    },
+    // 递归查询已选部门
+    getSelectedDept(id, arr) {
+      arr.forEach(item => {
+        if (item.id === id) {
+          this.tempList.push({id: item.id, name: item.name, type: item.extend.type})
+        }
+        if (item.children && item.children.length > 0) {
+          this.getSelectedDept(id, item.children)
+        }
+      })
     },
     enableinputHandle () {
       if(this.enableinput === false) {
         this.openDialog()
+        this.$refs.userSelectInput.blur()
       }
     },
     clearUser () {
       this.userStr = ""
+      this.userList = []
       if(this.selectable) {
         this.form[this.prop] = []
       }else{
         this.form[this.prop] = null
+        if(this.props) {
+          this.$set(this.form, this.props.label, null)
+        }
       }
       this.$emit('change', this.form)
+    },
+    eachDeptTree (list) {
+      for(let i in list) {
+        if(list[i].id == this.form[this.prop]) {
+          this.userStr = list[i].name
+          return false
+        }
+        if(list[i].children && list[i].children.length > 0) {
+          this.eachDeptTree(list[i].children)
+        }
+      }
     }
   },
   mounted () {},
@@ -122,11 +303,67 @@ export default {
     if(this.disabled === true) {
       this.disableBool = true
     }
-    if(this.props) {
+    // this.userStr = this.form[this.prop + '_1']
+    // 通过默认数据添加的人员仅存有id，由表单初始化获取所有用户列表进行匹配，只回显单个数据(多选暂不支持)
+    if(this.type == 'user' && this.form[this.prop]) {
+      if(this.selectable) {
+        getUserInfoListByIds(this.form[this.prop]).then(res => {
+          if(res.data && res.data.code == 0 && res.data.data) {
+            this.userList = res.data.data
+            res.data.data.filter(rit => {
+              this.userNameList.push(rit.realName)
+            })
+            this.$set(this, 'userStr', this.userNameList.join(','))
+          }
+        })
+      }else{
+        getUserInfoById(this.form[this.prop]).then(res => {
+          if(res.data && res.data.code == 0) {
+            this.userStr = res.data.data.realName
+          }
+        })
+      }
+    }
+    if(this.type == 'department' && this.form[this.prop]) {
+      if(this.selectable) {
+        let tpdept = []
+        this.form[this.prop].filter(dit => {
+          tpdept.push(dit[dit.length-1])
+        })
+        this.userList = tpdept
+      }else{
+        if(this.departmentList && this.departmentList.length > 0) {
+          this.eachDeptTree(this.departmentList)
+        }
+      }
+    }
+    if (this.form.extend) {
+      getUserListAll().then(res => {
+        if (res.data && res.data.code == 0 && res.data.data) {
+          const arr = [...res.data.data]
+          const index = arr.findIndex(item => {
+            return item.id === this.form.extend[this.prop]
+          })
+          this.userStr = arr[index].realName
+        }
+      })
+      return
+    }
+    if(this.form[this.prop + '_1']) {
+      this.userStr = this.form[this.prop + '_1']
+      return
+    }
+    // 单选时通过props传入label，赋值给用户名，与id同级
+    if (this.props) {
       if(this.form[this.props.label]) {
         this.userStr = this.form[this.props.label]
       }
     }
+    // if(this.props) {
+    //   if(this.form[this.props.label]) {
+    //     this.userStr = this.form[this.props.label]
+    //   }
+    // }
   },
   watch: {
     defaultValue: {
@@ -143,7 +380,7 @@ export default {
     resetRadom: {
       handler (newVal, oldVal) {
         if(newVal > -1) {
-          this.getList(true)
+          this.clearUser()
         }
       }
     }

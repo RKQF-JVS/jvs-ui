@@ -47,6 +47,7 @@
       :visible.sync="formVisible"
       fullscreen
       class="form-fullscreen-dialog"
+      :close-on-click-modal="false"
       :before-close="formClose">
       <jvs-form ref="myform" :option="option" :formData="rowData" @submit="submitForm">
         <template slot="formButton">
@@ -60,6 +61,7 @@
       v-if="dialogVisible"
       :visible.sync="dialogVisible"
       append-to-body
+      :close-on-click-modal="false"
       :before-close="handleClose">
       <el-upload
         class="upload-demo"
@@ -135,8 +137,8 @@ export default {
         cancal: false,
         addBtn: false,
         editBtn: false,
-        align: 'center',
-        menuAlign: 'center',
+        // align: 'center',
+        // menuAlign: 'center',
         showOverflow: true,
         search: true,
         page: true,

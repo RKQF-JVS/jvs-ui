@@ -63,6 +63,14 @@ export function editUser(data) {
   });
 }
 
+// 彻底删除用户
+export function deleteUser(id) {
+  return request({
+    url: `/mgr/jvs-auth/user/user/${id}`,
+    method: "delete",
+  });
+}
+
 // 启用用户 禁用用户
 export function enableDisUser(userId, cancelFlag) {
   let able = 'disabled'
@@ -81,6 +89,31 @@ export function inviteUser(params) {
   return request({
     url: `/mgr/jvs-auth/user/get/invite`,
     method: "get",
-    params: params
+    // params: params
+  });
+}
+
+// 设置邀请码是否需要审核默认不需要
+export function setInviteCodeCheck(status, code) {
+  return request({
+    url: `/mgr/jvs-auth//user/get/invite/${status}/${code}`,
+    method: "get",
+    // params: params
+  });
+}
+
+// 同步 钉钉 | 企业微信  组织机构(部门)
+export function sysDepartment(type) {
+  return request({
+    url: `/mgr/jvs-auth/dept/pull/${type}`,
+    method: "post"
+  });
+}
+
+// 获取同步按钮
+export function getSyncBtns() {
+  return request({
+    url: `/mgr/jvs-auth/dept/enable/pull/type`,
+    method: "get"
   });
 }

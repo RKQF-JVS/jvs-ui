@@ -1,4 +1,5 @@
 import * as globalTypes from "./types/global";
+import { getStore } from "@/util/store";
 const getters = {
   tag: state => state.tags.tag,
   website: state => state.common.website,
@@ -17,6 +18,8 @@ const getters = {
   tagWel: state => state.tags.tagWel,
   access_token: state => state.user.access_token,
   tenantId: state => state.common.tenantId,
+  systemHelpDict: state => state.common.systemHelpDict,
+  autoOpenedDict: state => state.common.autoOpenedDict,
   refresh_token: state => state.user.refresh_token,
   expires_in: state => state.user.expires_in,
   roles: state => state.user.roles,
@@ -25,13 +28,14 @@ const getters = {
   menuAll: state => state.user.menuAll,
   jti: state => state.user.jti,
   system: state => state.common.system,
-  Funcs: state => state.common.Funcs,
-  FuncGroup: state => state.common.FuncGroup,
+  labelValue: state => getStore({name: 'labelValue'}) || state.labelValue,
   [globalTypes.GET_DIRECTION](state) {
     return state.direction;
   },
   [globalTypes.GET_THEME](state) {
     return state.theme;
-  }
+  },
+  appSettingOpen: state => state.common.appSettingOpen,
+  menuType: state => state.common.menuType,
 };
 export default getters;

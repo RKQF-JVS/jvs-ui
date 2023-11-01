@@ -5,6 +5,7 @@
       title="解释管理"
       width="70%"
       :visible.sync="explainVisible"
+      :close-on-click-modal="false"
       :before-close="handleClose">
       <jvs-table :option="option" :data="tableData">
         <template slot="headerTop">
@@ -85,7 +86,7 @@ export default {
       this.loading = true
       getResourceList(menuId).then(res => {
         if (res.data && res.data.code == 0) {
-          this.tableData = [...res.data.data]
+          this.tableData = res.data.data ? [...res.data.data] : []
           this.loading = false
         } else {
           this.loading = false
@@ -147,7 +148,7 @@ export default {
 
 <style lang="scss" scoped>
 .explain-box{
-  ::v-deep.explain-dialog{
+  /deep/.explain-dialog{
     .el-dialog__body{
       padding: 0 20px;
       .el-table .el-table__body-wrapper {

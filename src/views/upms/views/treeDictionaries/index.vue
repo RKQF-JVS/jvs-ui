@@ -54,6 +54,7 @@
     <el-dialog
       :title="title"
       :visible.sync="dialogVisible"
+      :close-on-click-modal="false"
       :before-close="handleClose">
       <jvs-form v-if="dialogVisible" :option="formOption" :formData="form" @submit="submitHandle"></jvs-form>
     </el-dialog>

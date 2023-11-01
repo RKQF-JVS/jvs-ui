@@ -1,4 +1,5 @@
 import request from '@/router/axios'
+import { client_id} from '@/const/const'
 
 // 获取未读消息数量
 export const getUnread = () => {
@@ -15,6 +16,14 @@ export const getAllSystemList = (clientId) => {
     url: `/mgr/jvs-auth/index/menu/${clientId}`,
     method: "get",
     // params: clientId
+  });
+};
+
+//获取咨询支持
+export const getSupport = () => {
+  return request({
+    url: `/get/nacos/config/apply_version_pricing.js`,
+    method: "get",
   });
 };
 
@@ -58,5 +67,21 @@ export const getSearchMenu= (search, appId) => {
   return request({
       url: `/mgr/jvs-auth/index/menu/${search}/${appId}`,
       method: 'get'
+  })
+}
+
+// 获取前端跳转链接字典
+export const getSystemHelpDict = (type) => {
+  return request({
+    url: `/mgr/jvs-auth/dict/type/${type}`,
+    method: 'get'
+  })
+}
+
+// 获取应用公告列表
+export const getBulletinList = () => {
+  return request({
+    url: `/mgr/jvs-auth//index/bulletin/${client_id}`,
+    method: 'get'
   })
 }

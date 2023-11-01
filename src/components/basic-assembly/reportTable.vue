@@ -51,6 +51,9 @@
                     :departmentList="departmentList"
                     :postList="postList"
                     :resetRadom="resetRadom"
+                    :designId="designId"
+                    :execsList="execsList"
+                    :jvsAppId="jvsAppId"
                     @formChange="formChange" />
                 </div>
               </td>
@@ -119,6 +122,15 @@ export default {
     },
     resetRadom: {
       type: Number
+    },
+    designId: {
+      type: String
+    },
+    execsList: {
+      type: Array
+    },
+    jvsAppId:  {
+      type: String
     }
   },
   computed: {},
@@ -178,6 +190,9 @@ export default {
       tr:nth-last-of-type(1) {
         th, td{
           border-bottom-color: #fff;
+          .cell{
+            line-height: 40px;
+          }
         }
       }
     }

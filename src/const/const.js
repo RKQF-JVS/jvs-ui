@@ -5,23 +5,32 @@ export const client_secret = "frame";
 export const grant_type = "password";
 export const ETag = "Basic ZnJhbWU=";
 let baseKey = Base64.encode(client_id)
-export const enCodeKey = baseKey.length == 16 ? baseKey : 
+let passwordKey = Base64.encode('jvs')
+export const enCodeKey = baseKey.length == 16 ? baseKey :
   (
-    baseKey.length > 16 ? 
+    baseKey.length > 16 ?
     // 大于16位截取前16
-    (baseKey.slice(0, 16)) : 
+    (baseKey.slice(0, 16)) :
     // 小于16末尾补0
-    (get16LenString(baseKey)) 
+    (get16LenString(baseKey))
+  )
+export const enCodePasswordKey = passwordKey.length == 16 ? passwordKey :
+  (
+    passwordKey.length > 16 ?
+    // 大于16位截取前16
+    (passwordKey.slice(0, 16)) :
+    // 小于16末尾补0
+    (get16LenString(passwordKey))
   )
 
 let baseDecode = Base64.encode('jvs')
-export const deCodeKey = baseDecode.length == 16 ? baseDecode : 
+export const deCodeKey = baseDecode.length == 16 ? baseDecode :
   (
-    baseDecode.length > 16 ? 
+    baseDecode.length > 16 ?
     // 大于16位截取前16
-    (baseDecode.slice(0, 16)) : 
+    (baseDecode.slice(0, 16)) :
     // 小于16末尾补0
-    (get16LenString(baseDecode)) 
+    (get16LenString(baseDecode))
   )
 
 function get16LenString (str) {

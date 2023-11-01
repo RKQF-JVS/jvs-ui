@@ -6,6 +6,7 @@
       width="60%"
       :fullscreen="true"
       :visible.sync="dataAuthVisible"
+      :close-on-click-modal="false"
       :before-close="handleClose">
       <div class="header-text">如果不勾选数据权限功能,默认查询所有数据</div>
       <div class="data-authority-content">
@@ -270,7 +271,7 @@ export default {
 
 <style lang="scss" scoped>
 .data-authority{
-  ::v-deep.data-authority-dialog{
+  /deep/.data-authority-dialog{
     .el-dialog__body{
       padding: 0 20px;
     }

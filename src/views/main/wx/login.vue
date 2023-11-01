@@ -3,7 +3,7 @@
 </template>
 <script>
 import { mapGetters } from 'vuex'
-import {bindWX} from '@/api/admin/user'
+import { bindWX, bindQW } from '@/api/admin/user'
 import { encryption } from "@/util/util";
 import {enCodeKey, client_id} from "@/const/const"
 export default {
@@ -30,7 +30,13 @@ export default {
             key: enCodeKey,
             param: ["data"]
           });
-          bindWX({code: temp.data, appId: client_id}).then(res => {
+          let fun = null
+          if(query.type == 'WECHAT_ENTERPRISE') {
+            fun = bindQW
+          }else{
+            fun = bindWX
+          }
+          fun({code: temp.data, appId: client_id}).then(res => {
             if(res.data.code != 0) {
               this.$message.error(res.data.msg)
             }
@@ -69,8 +75,8 @@ export default {
       if(data.userDto && data.userDto.tenants) {
         list = data.userDto.tenants
         if(list.length > 0) {
-          // 只有一个租户直接进去
-          if(list.length == 1) {
+          // 只有一个租户 或指定租户 直接进去
+          if(list.length == 1 || (data.userDto.tenantId && data.userDto.tenant)) {
             this.$store.commit("SET_SwitchTenant", false)
             this.setUserInfoData(data)
           }else{

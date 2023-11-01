@@ -18,7 +18,10 @@ const common = {
     template: getStore({name: 'template'}) || "",
     tenantInfo: getStore({name: 'tenantInfo'}),
     MobileWidth: getStore({ name: 'MobileWidth' }),
-    Funcs: getStore({name: 'Funcs'})
+    systemHelpDict: getStore({name: 'systemHelpDict'}) || [],
+    autoOpenedDict: getStore({name: 'autoOpenedDict'}) || [],
+    appSettingOpen: getStore({name: 'appSettingOpen'}) || false,
+    menuType: getStore({name: 'menuType'}) || ''
   },
   actions: {},
   mutations: {
@@ -177,6 +180,38 @@ const common = {
       });
       document.title = info.shortName
     },
+    SET_SYSTEM_HELP_DICT: (state, info) => {
+      state.systemHelpDict = info;
+      setStore({
+        name: "systemHelpDict",
+        content: state.systemHelpDict,
+        type: "session"
+      });
+    },
+    SET_AUTO_OPENED_DICT: (state, info) => {
+      state.autoOpenedDict = info;
+      setStore({
+        name: "autoOpenedDict",
+        content: state.autoOpenedDict,
+        type: "session"
+      });
+    },
+    SET_APP_SETTING_OPEN: (state, info) => {
+      state.appSettingOpen = info;
+      setStore({
+        name: "appSettingOpen",
+        content: state.appSettingOpen,
+        type: "session"
+      });
+    },
+    SET_MENU_TYPE: (state, info) => {
+      state.menuType = info;
+      setStore({
+        name: "menuType",
+        content: state.menuType,
+        type: "session"
+      });
+    },
     set_MobileWidth (state, data) {
       state.MobileWidth = data
       setStore({
@@ -184,24 +219,7 @@ const common = {
         content: state.MobileWidth,
         type: 'session'
       })
-    },
-    // 逻辑引擎参数处理
-    set_funcs (state, data) {
-      state.Funcs = data
-      setStore({
-        name: 'Funcs',
-        content: state.Funcs,
-        type: 'session'
-      })
-    },
-    set_funcgroup(state, data) {
-      state.FuncGroup = data
-      setStore({
-        name: 'FuncGroup',
-        content: state.FuncGroup,
-        type: 'session'
-      })
-    },
+    }
   }
 };
 export default common;

@@ -11,18 +11,6 @@ export default [{
         }
     },
     {
-        path: '/authorize',
-        component: () =>
-            import ( /* webpackChunkName: "page" */ '@/page/main/authorize/index'),
-        name: '授权页',
-        meta: {
-            keepAlive: true,
-            isTab: false,
-            isAuth: false
-        }
-
-    },
-    {
         path: '/404',
         component: () =>
             import ( /* webpackChunkName: "page" */ '@/components/error-page/404'),
@@ -85,5 +73,82 @@ export default [{
             isTab: false,
             isAuth: false
         }
-    }
+    },
+    {
+        path: '/login/dingtalk',
+        component: () =>
+            import ( /* webpackChunkName: "page" */ '@/views/main/dingtalk/login'),
+        name: '钉钉登录',
+        meta: {
+            keepAlive: true,
+            isTab: false,
+            isAuth: false
+        }
+    },
+    {
+        path: '/enterpriseWechat/index',
+        component: () =>
+            import ( /* webpackChunkName: "page" */ '@/views/main/enterpriseWechat/index'),
+        name: '企业微信登录',
+        meta: {
+            keepAlive: true,
+            isTab: false,
+            isAuth: false
+        }
+    },
+    {
+        path: '/login/enterpriseWechat',
+        component: () =>
+            import ( /* webpackChunkName: "page" */ '@/views/main/enterpriseWechat/login'),
+        name: '企业微信登录',
+        meta: {
+            keepAlive: true,
+            isTab: false,
+            isAuth: false
+        }
+    },
+    {
+        path: '/login/dingtalk/scanback',
+        component: () =>
+            import ( /* webpackChunkName: "page" */ '@/views/main/dingtalk/scanback'),
+        name: '钉钉扫码登录',
+        meta: {
+            keepAlive: true,
+            isTab: false,
+            isAuth: false
+        }
+    },
+    {
+        path: '/login/dingtalk/bindback',
+        component: () =>
+            import ( /* webpackChunkName: "page" */ '@/views/main/dingtalk/bind'),
+        name: '钉钉扫码绑定',
+        meta: {
+            keepAlive: true,
+            isTab: false,
+            isAuth: false
+        }
+    },
+    {
+        path: '/login/own',
+        component: () =>
+            import ( /* webpackChunkName: "page" */ '@/views/main/own/login'),
+        name: '企业登录',
+        meta: {
+            keepAlive: true,
+            isTab: false,
+            isAuth: false
+        }
+    },
+    {
+        path: '/login/standardown',
+        component: () =>
+            import ( /* webpackChunkName: "page" */ '@/views/main/standardOwn/login'),
+        name: '自有标准登录',
+        meta: {
+            keepAlive: true,
+            isTab: false,
+            isAuth: false
+        }
+    },
 ]

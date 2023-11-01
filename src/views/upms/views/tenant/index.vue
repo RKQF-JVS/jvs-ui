@@ -16,15 +16,20 @@
         </template>
         <template slot="menu" slot-scope="scope">
           <jvs-button type="text" size="mini" @click="editItem(scope.row)" permisionFlag="">编辑</jvs-button>
-          <jvs-button type="text" size="mini" @click="disableHandle(scope.row)" permisionFlag="" v-if="!scope.row.enable && isCurrentTenant(scope.row)">启用</jvs-button>
-          <jvs-button type="text" size="mini" @click="disableHandle(scope.row)" permisionFlag="" v-if="scope.row.enable && isCurrentTenant(scope.row)">禁用</jvs-button>
-          <jvs-button type="text" size="mini" @click="delItem(scope.row)" permisionFlag="" v-if="isCurrentTenant(scope.row)">删除</jvs-button>
+<!--          <jvs-button type="text" size="mini" @click="openUser(scope.row)" permisionFlag="" v-if="tenantId !== scope.row.id">设置管理员</jvs-button>-->
+          <jvs-button type="text" size="mini" @click="disableHandle(scope.row)" permisionFlag="" v-if="!scope.row.enable && isCurrentTenant(scope.row) && tenantId !== scope.row.id">启用</jvs-button>
+          <jvs-button type="text" size="mini" @click="disableHandle(scope.row)" permisionFlag="" v-if="scope.row.enable && isCurrentTenant(scope.row) && tenantId !== scope.row.id">禁用</jvs-button>
+          <jvs-button type="text" size="mini" @click="setAppItem(scope.row)" permisionFlag="">设置应用</jvs-button>
+          <jvs-button type="text" size="mini" @click="delItem(scope.row)" permisionFlag="" v-if="!scope.row.enable && isCurrentTenant(scope.row)"><span style="color: #F56C6C;">删除</span></jvs-button>
         </template>
         <template slot="roleName" slot-scope="scope">
           {{ scope.row.roleName && scope.row.roleName.join(",") }}
         </template>
         <template slot="loginTypes" slot-scope="scope">
           {{scope.row.loginTypes | formatLoginType}}
+        </template>
+        <template slot="adminUserImg" slot-scope="scope">
+          <img v-if="scope.row.adminUserImg" :src="scope.row.adminUserImg" alt="" style="display: inline-block;width: 40px;height: 40px;border-radius: 50%;overflow: hidden;">
         </template>
       </jvs-table>
     </div>
@@ -36,13 +41,27 @@
       :title="title"
       append-to-body
       class="form-fullscreen-dialog no-header-dialog-tenant"
+      :close-on-click-modal="false"
     >
-      <tenantForm v-if="dialogVisible" :submitType="title == '新增' ? 'add' : 'edit'" :rowData="rowData" @close="closeHandle"></tenantForm>
+      <tenantForm v-if="dialogVisible && dialogType == 'tenant'" :submitType="title == '新增' ? 'add' : 'edit'" :rowData="rowData" @close="closeHandle"></tenantForm>
+      <appInfoForm v-if="dialogVisible && dialogType == 'app'" :rowData="rowData"></appInfoForm>
     </el-dialog>
+    <userSelector
+      ref="userSelector"
+      :userEnable="true"
+      :roleEnable="false"
+      :currentActiveName="'user'"
+      :isRadio="true"
+      :dialogTitle="'人员选择'"
+      @submit="addCheckUSer"
+    />
   </div>
 </template>
 <script>
 import { tableOption } from './option'
+import store from "@/store";
+import userSelector from '@/components/basic-assembly/userSelector'
+import {setTenantManager} from './api'
 import {
   getTenantList,
   deleteTenant,
@@ -52,9 +71,10 @@ import {
   getTenantDetail
 } from '../../api/tenant.js'
 import tenantForm from './tenantForm'
+import appInfoForm from '../appBascSetting/appinfo'
 export default {
   name: 'tenant-manage',
-  components: { tenantForm },
+  components: { tenantForm, userSelector, appInfoForm },
   data () {
     return {
       queryParams: {},
@@ -75,9 +95,12 @@ export default {
       userForm: {}, // 用户表单
       roleLsit: [], // 角色列表
       tableLoading: false,
+      dialogType: '',
+      tenantId: store.state.common.tenantId
     }
   },
-  created () {},
+  created () {
+  },
   filters: {
     formatLoginType (list) {
       let dicData = [
@@ -153,11 +176,15 @@ export default {
         this.userForm = {
           loginTypes: []
         }
+        this.rowData.defaultPassword = '123456'
       }
+      this.dialogType = 'tenant'
       this.dialogVisible=true
     },
     // 关闭弹框
     handleClose () {
+      this.dialogType = ''
+      this.rowData = {}
       this.dialogVisible=false
       this.iconFileList = []
       this.bgFileList = []
@@ -194,6 +221,27 @@ export default {
       bool = true // 当前租户可编辑自己！！！！！！！！！！！！！！！！！！！！！
       return bool
     },
+    openUser (row) {
+      this.rowData = JSON.parse(JSON.stringify(row))
+      this.$refs.userSelector.openDialog()
+    },
+    addCheckUSer (list) {
+      if(list && list.length > 0) {
+        setTenantManager(this.rowData.id, list[0].id).then(res => {
+          if(res.data && res.data.code == 0) {
+            this.$message.success('设置成功')
+            this.getList()
+            this.rowData = {}
+          }
+        })
+      }
+    },
+    setAppItem (row) {
+      this.rowData = JSON.parse(JSON.stringify(row))
+      this.title = '设置应用'
+      this.dialogType = 'app'
+      this.dialogVisible = true
+    }
   }
 }
 </script>

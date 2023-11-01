@@ -176,6 +176,17 @@ export default [
 		}
 	},
 	{
+		path: '/systemlogs',
+		name: '系统日志',
+		component: () =>
+            import ( /* webpackChunkName: "page" */ './views/systemLog/index'),
+		meta: {
+			keepAlive: true,
+			isTab: false,
+			isAuth: false
+		}
+	},
+	{
 		path: '/basicsetting',
 		name: '系统设置',
 		component: () =>
@@ -286,17 +297,6 @@ export default [
 		}
 	},
 	{
-		path: '/dataAuthority',
-		name: '数据权限',
-		component: () =>
-            import ( /* webpackChunkName: "page" */ './views/dataAuthority/index'),
-		meta: {
-			keepAlive: true,
-			isTab: false,
-			isAuth: false
-		}
-	},
-	{
 		path: '/inviteUser',
 		name: '邀请 ',
 		component: () =>
@@ -339,5 +339,214 @@ export default [
 			isTab: false,
 			isAuth: false
 		}
-	}
+	},
+	{
+		path: '/errCode',
+		name: '网关错误码',
+		component: () =>
+            import ( /* webpackChunkName: "page" */ './views/errCodeManage/index'),
+		meta: {
+			keepAlive: true,
+			isTab: false,
+			isAuth: false
+		}
+	},
+	{
+		path: '/gatewayUrl',
+		name: '网关权限忽略配置',
+		component: () =>
+            import ( /* webpackChunkName: "page" */ './views/gatewayUrl/index'),
+		meta: {
+			keepAlive: true,
+			isTab: false,
+			isAuth: false
+		}
+	},
+	{
+		path: '/gatewayRouter',
+		name: '网关自定义路由表',
+		component: () =>
+            import ( /* webpackChunkName: "page" */ './views/gatewayRouter/index'),
+		meta: {
+			keepAlive: true,
+			isTab: false,
+			isAuth: false
+		}
+	},
+	{
+		path: '/tempCenter',
+		name: '模板中心配置',
+		component: () =>
+            import ( /* webpackChunkName: "page" */ '@/components/application/tempCenter'),
+		meta: {
+			keepAlive: true,
+			isTab: false,
+			isAuth: false
+		}
+	},
+	{
+		path: '/appRole',
+		name: '应用角色管理',
+		component: () =>
+            import ( /* webpackChunkName: "page" */ '@/components/application/appRole'),
+		meta: {
+			keepAlive: true,
+			isTab: false,
+			isAuth: false
+		}
+	},
+	{
+		path: '/accountManage',
+		name: '应用角色管理',
+		component: () =>
+            import ( /* webpackChunkName: "page" */ './views/accountManage/index'),
+		meta: {
+			keepAlive: true,
+			isTab: false,
+			isAuth: false
+		}
+	},
+	{
+		path: '/gatewayIgnore',
+		name: '网关加密忽略',
+		component: () =>
+            import ( /* webpackChunkName: "page" */ './views/gatewayIgnore/index'),
+		meta: {
+			keepAlive: true,
+			isTab: false,
+			isAuth: false
+		}
+	},
+	{
+		path: '/xssIgnore',
+		name: '网关XSS忽略',
+		component: () =>
+            import ( /* webpackChunkName: "page" */ './views/xssIgnore/index'),
+		meta: {
+			keepAlive: true,
+			isTab: false,
+			isAuth: false
+		}
+	},
+  {
+    path: '/dataResource',
+    name: '数据源管理',
+    component: () =>
+      import ( /* webpackChunkName: "page" */ './views/dataResource/index'),
+    meta: {
+      keepAlive: true,
+      isTab: false,
+      isAuth: false
+    }
+  },
+  {
+    path: '/systeminfo',
+    name: '系统基本信息',
+    component: () =>
+      import ( /* webpackChunkName: "page" */ './views/systemInfo/index'),
+    meta: {
+      keepAlive: true,
+      isTab: false,
+      isAuth: false
+    }
+  },
+  {
+    path: '/shortmessage',
+    name: '短信配置',
+    component: () =>
+      import ( /* webpackChunkName: "page" */ './views/shortMessage/index'),
+    meta: {
+      keepAlive: true,
+      isTab: false,
+      isAuth: false
+    }
+  },
+  {
+    path: '/shortmessagetemplate',
+    name: '短信消息模板',
+    component: () =>
+      import ( /* webpackChunkName: "page" */ './views/shortMessageTemplate/index'),
+    meta: {
+      keepAlive: true,
+      isTab: false,
+      isAuth: false
+    }
+  },
+  {
+    path: '/mailconfig',
+    name: '邮箱配置',
+    component: () =>
+      import ( /* webpackChunkName: "page" */ './views/mailConfig/index'),
+    meta: {
+      keepAlive: true,
+      isTab: false,
+      isAuth: false
+    }
+  },
+  {
+    path: '/oauthconfig',
+    name: 'oauth配置',
+    component: () =>
+      import ( /* webpackChunkName: "page" */ './views/oauthConfig/index'),
+    meta: {
+      keepAlive: true,
+      isTab: false,
+      isAuth: false
+    }
+  },
+  {
+    path: '/userlevel',
+    name: '用户等级',
+    component: () =>
+      import ( /* webpackChunkName: "page" */ './views/userLevel/index'),
+    meta: {
+      keepAlive: true,
+      isTab: false,
+      isAuth: false
+    }
+  },
+  {
+    path: '/userdel',
+    name: '删除用户',
+    component: () =>
+      import ( /* webpackChunkName: "page" */ './views/userDel/index'),
+    meta: {
+      keepAlive: true,
+      isTab: false,
+      isAuth: false
+    }
+  },
+  {
+    path: '/usercheck',
+    name: '用户审核',
+    component: () =>
+      import ( /* webpackChunkName: "page" */ './views/userCheck/index'),
+    meta: {
+      keepAlive: true,
+      isTab: false,
+      isAuth: false
+    }
+  },
+  {
+    path: '/orgurl',
+    name: '组织域名',
+    component: () =>
+      import ( /* webpackChunkName: "page" */ './views/orgUrl/index'),
+    meta: {
+      keepAlive: true,
+      isTab: false,
+      isAuth: false
+    }
+  },
+  {
+    path: '/orglogout',
+    name: '注销组织',
+    component: () =>
+      import ( /* webpackChunkName: "page" */ './views/orgLogout/index'),
+    meta: {
+      keepAlive: true,
+      isTab: false,
+      isAuth: false
+    }
+  },
 ]

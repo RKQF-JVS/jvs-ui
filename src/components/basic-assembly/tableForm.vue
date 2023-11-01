@@ -1,14 +1,17 @@
 <template>
   <div :class="{'table-form': true, 'table-form-noteditable': !item.editable}">
     <jvs-table
+      v-if="readyShow"
       :pageheadertitle="item.editable ? '' : item.label"
       :option="options"
       :page="page"
       :data="tableData"
+      :index="true"
+      :editable="item.editable"
       @on-load="getList"
     >
       <template slot="menu" slot-scope="scope">
-        <div style="width: 100%;display: flex;justify-content: center;">
+        <div :style="'width: 100%;display: flex;justify-content: '+ option.menuAlign == 'left' ? 'left' : 'center' + ';'">
           <jvs-button v-if="!item.editable && item.editBtn" size="mini" type="text" @click="showForm(item, 'edit', scope.row, scope.index)">编辑</jvs-button>
           <jvs-button v-if="!item.editable && item.viewBtn" size="mini" type="text" @click="showForm(item, 'view', scope.row, scope.index)">详情</jvs-button>
           <slot name="menuBtn" :row="scope.row" :index="scope.index"></slot>
@@ -24,17 +27,32 @@
             <span>{{item.text.label}}</span>
           </div>
           <div v-if="item.needSlot !== true && !(item.text && item.text.label && scope.row[item.prop] == item.text.value) && displayByBind(item, scope.row)" :key="item.prop+'item'">
-            <tableFormItem
-              :tableRowAIndex="scope.index"
-              :style="'justify-content:'+ (options.align == 'center' ? 'center' : 'flex-start')"
-              :form="scope.row"
-              :item="item"
-              :roleOption="roleOption"
-              :userList="userList"
-              :departmentList="departmentList"
-              :postList="postList"
-              @formChange="formChange"
-            ></tableFormItem>
+            <el-form
+              :model="scope.row"
+              :ref="formRef || 'ruleForm'"
+              class="demo-dynamic"
+              size='mini'
+            >
+              <el-form-item label="" :prop='item.prop' :rules='item.rules' v-model="scope.row[item.prop]" style="margin-bottom: 0;">
+                <tableFormItem
+                  :tableRowAIndex="scope.index"
+                  :style="'justify-content:'+ (options.align == 'center' ? 'center' : 'flex-start')"
+                  :form="getDefaultData(scope.row)"
+                  :item="{...item, disabledControl: disabledExpressHandle(item, scope.row, getDefaultData(scope.row))}"
+                  :roleOption="roleOption"
+                  :userList="userList"
+                  :departmentList="departmentList"
+                  :postList="postList"
+                  :designId="designId"
+                  :isView="isView"
+                  :execsList="execsList"
+                  :jvsAppId="jvsAppId"
+                  :originForm="forms"
+                  @formChange="formChange"
+                  @reInitData="reInitData"
+                ></tableFormItem>
+              </el-form-item>
+            </el-form>
           </div>
           <div v-if="displayByBind(item, scope.row) && !(item.text && item.text.label && scope.row[item.prop] == item.text.value) && item.needSlot === true" :key="item.prop+'needslotitem'">
             <slot :name="item.prop+'Item'" :row="scope.row" :index="scope.index"></slot>
@@ -52,6 +70,10 @@ import formDialog from '@/plugin/components/dialogInfo'
 import {getSystemDictItems, getClassifyDictTree} from '@/api/newDesign'
 import {getDeptList, getRoleList, getPostList} from '../api'
 import {areaList} from '@/const/chinaArea.js'
+import {doExec} from '@/components/basic-container/formula/api'
+import {dataModelTriggering} from '@/components/api'
+import moment from "moment";
+import {getUserInfo} from "@/api/admin/user";
 export default {
   name: 'table-Form',
   components: {
@@ -60,6 +82,10 @@ export default {
     formDialog
   },
   props: {
+    formRef: {
+      type: String,
+      default: 'ruleForm'
+    },
     item: {
       type: Object
     },
@@ -111,6 +137,30 @@ export default {
     },
     resetRadom: {
       type: Number
+    },
+    designId: {
+      type: String
+    },
+    forms: {
+      type: Object
+    },
+    dataModelId: {
+      type: String
+    },
+    changeRandom: {
+      type: Number
+    },
+    changeDomItem: {
+      type: Object
+    },
+    isView: {
+      type: Boolean
+    },
+    execsList: {
+      type: Array
+    },
+    jvsAppId:  {
+      type: String
     }
   },
   computed: {
@@ -148,17 +198,26 @@ export default {
       if(this.item.menuFix) {
         temp.menuFix = this.item.menuFix
       }
-      temp.menuAlign = 'center'
+      if(temp.menuAlign != 'left') {
+        temp.menuAlign = 'center'
+      }
+      temp.indexLabel = '序号'
       return temp
     }
   },
   created () {
+    if(this.$store.getters && this.$store.getters.userInfo) {
+      this.userInfo = JSON.parse(JSON.stringify(this.$store.getters.userInfo))
+    }else{
+      this.getUserInfo()
+    }
     this.init()
   },
   data () {
     return {
       title: '',
       tableData: [],
+      userInfo: {},
       page: {
         total: 0, // 总页数
         currentPage: 1, // 当前页数
@@ -168,11 +227,23 @@ export default {
       openType: '', // 弹框类型
       rowIndex: -1, // 行数据index
       loadTimes: -1, // 加载次数
-      initData: []
+      initData: [],
+      readyShow: false
     }
   },
   methods: {
-    init () {
+    getUserInfo() {
+      getUserInfo().then(res => {
+        if(res.data.code == 0) {
+          this.userInfo = res.data.data
+        }
+      })
+    },
+    // 扩展组件默认值
+    getDefaultData(obj) {
+      return {}
+    },
+    async init () {
       let deptBool = false
       let roleBool = false
       let postBool = false
@@ -188,7 +259,7 @@ export default {
         }
         // 接口字典
         if(this.options.tableColumn[i].dicUrl) {
-          getSelectData(this.options.tableColumn[i].dicUrl).then(res => {
+          await getSelectData(this.options.tableColumn[i].dicUrl).then(res => {
             if(res.data.code == 0) {
                for(let sitem in res.data.data){
                 if(typeof sitem == 'string') {
@@ -208,7 +279,7 @@ export default {
         }
         // 系统字典
         if(this.options.tableColumn[i].datatype == 'system' && this.options.tableColumn[i].systemDict) {
-          getSystemDictItems(this.options.tableColumn[i].systemDict).then(res => {
+          await getSystemDictItems(this.options.tableColumn[i].systemDict).then(res => {
             if(res.data.code == 0) {
               this.options.tableColumn[i].dicData = []
                for(let sitem in res.data.data){
@@ -229,7 +300,7 @@ export default {
         }
         // 级联选择类
         if(this.options.tableColumn[i].type == 'cascader' && this.options.tableColumn[i].dictName) {
-          getClassifyDictTree(this.options.tableColumn[i].dictName).then(res => {
+          await getClassifyDictTree(this.options.tableColumn[i].dictName).then(res => {
             if(res.data.code == 0 && res.data.data && res.data.data.children) {
               this.options.tableColumn[i].dicData = res.data.data.children
               this.options.tableColumn[i].emitKey = 'uniqueName'
@@ -274,15 +345,10 @@ export default {
       }
       // 部门回显
       if(deptBool) {
-        getDeptList().then(res => {
+        await getDeptList().then(res => {
           if(res.data.code == 0) {
             for(let i in this.options.tableColumn) {
               if(this.options.tableColumn[i].type == 'department') {
-                this.options.tableColumn[i].props = {
-                  label: 'name',
-                  value: 'id',
-                  children: 'childList'
-                }
                 this.options.tableColumn[i].dicData = res.data.data
               }
             }
@@ -291,14 +357,10 @@ export default {
       }
       // 角色回显
       if(roleBool) {
-        getRoleList().then(res => {
+        await getRoleList().then(res => {
           if(res.data.code == 0) {
             for(let i in this.options.tableColumn) {
               if(this.options.tableColumn[i].type == 'role') {
-                this.options.tableColumn[i].props = {
-                  label: 'roleName',
-                  value: 'id',
-                }
                 this.options.tableColumn[i].dicData = res.data.data
               }
             }
@@ -307,20 +369,20 @@ export default {
       }
       // 岗位回显
       if(postBool) {
-        getPostList().then(res => {
+        await getPostList().then(res => {
           if(res.data.code == 0) {
             for(let i in this.options.tableColumn) {
               if(this.options.tableColumn[i].type == 'post') {
-                this.options.tableColumn[i].props = {
-                  label: 'name',
-                  value: 'id'
-                }
                 this.options.tableColumn[i].dicData = res.data.data
               }
             }
           }
         })
       }
+      // if(this.item.formId && !this.isView) {
+      //   await this.getDataByFilter()
+      // }
+      this.readyShow = true
     },
     // 下拉选择change
     valueChange (item, row) {
@@ -351,8 +413,15 @@ export default {
       }
       return temp
     },
-    formChange (form) {
-      this.$emit('formChange', form)
+    async formChange (form, item) {
+      if(this.$refs[this.formRef || 'ruleForm'] && this.$refs[this.formRef || 'ruleForm'].length > 0) {
+        for(let r in this.$refs[this.formRef || 'ruleForm']) {
+          this.$refs[this.formRef || 'ruleForm'][r].validate( (valid) => {
+            //
+          })
+        }
+      }
+      this.$emit('formChange', form, item)
     },
     // 打开表单
     showForm (item, type, row, index) {
@@ -400,8 +469,8 @@ export default {
       if(this.item.tableEchoRequest && !this.item.editable) {
         // 请求接口
         let tp = JSON.parse(JSON.stringify(this.item.tableEchoRequest))
-        if(this.$store.state.labelValue && this.$store.state.labelValue.requestContentType) {
-          tp.requestContentType = this.$store.state.labelValue.requestContentType[tp.requestContentType]
+        if(this.$store.getters.labelValue && this.$store.getters.labelValue.requestContentType) {
+          tp.requestContentType = this.$store.getters.labelValue.requestContentType[tp.requestContentType]
         }
         if(tp && tp.url) {
           let query = {}
@@ -444,8 +513,8 @@ export default {
         if(this.item.tableDeleteRequest && this.item.tableDeleteRequest.url) {
           // 请求接口
           let tp = JSON.parse(JSON.stringify(this.item.tableDeleteRequest))
-          if(this.$store.state.labelValue && this.$store.state.labelValue.requestContentType) {
-            tp.requestContentType = this.$store.state.labelValue.requestContentType[tp.requestContentType]
+          if(this.$store.getters.labelValue && this.$store.getters.labelValue.requestContentType) {
+            tp.requestContentType = this.$store.getters.labelValue.requestContentType[tp.requestContentType]
           }
           if(tp && tp.url) {
             sendMyRequire(tp, row).then(res => {
@@ -468,7 +537,94 @@ export default {
         pageSize: 20, // 每页显示多少条
         pageSizes: [20, 50, 100, 200, 500, 1000]
       }
-    }
+    },
+    async getDataByFilter () {
+      let tprop = []
+      for(let i in this.item.tableColumn) {
+        tprop.push(this.item.tableColumn[i].prop)
+      }
+      let postData = {
+        fieldList: tprop,
+        conditions: []
+      }
+      let nomptyValue = true
+      if(this.item.dataFilterList) {
+        for(let df in this.item.dataFilterList) {
+          let dfit = {
+            enabledQueryTypes: this.item.dataFilterList[df].enabledQueryTypes,
+            fieldKey: this.item.dataFilterList[df].fieldKey,
+          }
+          if(this.item.dataFilterList[df].type == 'cust') {
+            dfit.value = this.item.dataFilterList[df].value
+          }else{
+            dfit.value = this.forms[this.item.dataFilterList[df].value]
+            if((dfit.value == undefined || dfit.value == null || dfit.value == '') && this.item.dataFilterList[df].enabledQueryTypes != 'isNull' ) {
+              nomptyValue = false
+            }
+          }
+          postData.conditions.push(dfit)
+        }
+      }
+      if(nomptyValue) {
+        await getSelectData(`/mgr/jvs-design/app/${this.jvsAppId}/use/dynamic/data/query/list/${this.item.formId}`, 'post', postData, this.designId).then(res => {
+          if(res.data && res.data.code == 0) {
+            this.$set(this, 'tableData', res.data.data)
+            this.$emit('setTable', this.tableData)
+            // console.log('表格的筛选。。。。', res.data.data)
+          }
+        })
+      }
+    },
+    reInitData (prop, parentKey, index, tableType) {
+      this.$emit('reInitData', prop, parentKey, index, tableType)
+    },
+    // 表达式控制显示
+    disabledExpressHandle (item, row, form) {
+      let bool = false
+      let formStr = 'row' // 表单值参数名
+      if(item.disabledExpress && item.disabledExpress.length > 0) {
+        let list = item.disabledExpress
+        let temp = []
+        for(let i in list) {
+          let prop = (formStr + '.') // 控制字段名
+          if(list[i].parent && list[i].parent.length > 0) {
+            prop += list[i].parent.join('.')
+            prop += '.'
+          }
+          prop += list[i].prop
+
+          // 校验层级表单值是否为undefined
+          let tpr = ''
+          let exValidate = true
+          tpr += formStr
+          for(let p in list[i].parent) {
+            tpr += ('.' + list[i].parent[p])
+            if(eval(tpr) == undefined) {
+              exValidate = false
+              break;
+            }
+          }
+          if(exValidate) {
+            let tv = JSON.stringify(list[i].value.split(','))
+            tv += '.indexOf( '
+            let tp = (tv + prop + ' + ' + "''" + ')')
+            tp += (' > -1')
+            temp.push(tp)
+          }
+        }
+        if(temp.length > 0) {
+          if(eval(temp.join(` ${item.showOperator || '||'} `))) {
+            bool = true
+          }
+        }
+      }else{
+        bool = false
+      }
+      if(bool && !item.disabled && item.disabledEmpty) {
+        this.$set(form, item.prop, '')
+      }
+      return bool
+    },
   },
   watch: {
     tableData: {
@@ -487,7 +643,47 @@ export default {
       handler (newVal, oldVal) {
         if(this.item.editable) {
           this.tableData = this.data
+          if(this.$refs[this.formRef || 'ruleForm'] && this.$refs[this.formRef || 'ruleForm'].length > 0) {
+            for(let r in this.$refs[this.formRef || 'ruleForm']) {
+              this.$refs[this.formRef || 'ruleForm'][r].validate( (valid) => {
+                //
+              })
+            }
+          }
           this.$forceUpdate()
+        }
+      }
+    },
+    changeRandom: {
+      handler (newVal, oldVal) {
+        if(newVal > -1 && this.item.formId && !this.isView) {
+          let bool = true
+          if(this.changeDomItem) {
+            // 本身子组件触发不请求
+            if(this.changeDomItem.parentType == this.item.type) {
+              let pks = this.changeDomItem.parentKey.split('.')
+              if(pks[pks.length - 1] == this.item.prop) {
+                bool = false
+              }
+            }
+            // 触发组件不作为条件的不请求
+            if(this.item.dataFilterList && this.item.dataFilterList.length > 0) {
+              let pool = false
+              this.item.dataFilterList.filter(dit => {
+                if(dit.type == 'prop') {
+                  if(dit.value == this.changeDomItem.prop) {
+                    pool = true
+                  }
+                }
+              })
+              if(!pool) {
+                bool = false
+              }
+            }
+          }
+          if(bool) {
+            this.getDataByFilter()
+          }
         }
       }
     }
@@ -497,6 +693,9 @@ export default {
 <style lang="scss">
 .table-form{
   overflow: hidden;
+  .jvs-table-notitle{
+    display: none;
+  }
   .el-card{
     border-width: 0;
   }
@@ -523,6 +722,19 @@ export default {
               min-width: 50%;
               margin-right: 0;
               text-align: left;
+            }
+          }
+        }
+        .demo-dynamic{
+          .el-form-item{
+            padding: 0;
+            .el-input.is-disabled{
+              .el-input__inner{
+                padding-right: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: pre;
+              }
             }
           }
         }
@@ -562,6 +774,13 @@ export default {
         line-height: 28px;
       }
     }
+    .el-upload-list{
+      .el-upload-list__item{
+        .el-icon-close-tip{
+          display: none!important;
+        }
+      }
+    }
   }
 }
 .table-form-noteditable{
@@ -572,6 +791,31 @@ export default {
     }
     .table-body-box{
       padding: 0;
+    }
+  }
+}
+.show-form{
+  .table-form{
+    .table-body-box{
+      .el-table__body-wrapper{
+        .el-table__empty-block{
+          display: none!important;
+        }
+      }
+      .jvs-form-item{
+        .user-info-list{
+          .el-input__inner{
+            width: 100%;
+          }
+          .el-input-group__append{
+            width: auto;
+            .el-button{
+              padding: 7px 5px;
+              margin: 0;
+            }
+          }
+        }
+      }
     }
   }
 }

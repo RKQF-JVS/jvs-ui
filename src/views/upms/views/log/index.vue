@@ -28,6 +28,7 @@
       :visible.sync="dialogVisible"
       :fullscreen="true"
       :before-close="handleClose"
+      :close-on-click-modal="false"
     >
       <h4 class="timeline-title">
         <span>{{rowData.tid}}</span>

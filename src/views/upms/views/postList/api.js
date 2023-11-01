@@ -9,7 +9,7 @@ export function getPostList() {
 }
 
 // 岗位下的用户
-export function getUserByPostId(params) {
+export function getUserByJobId(params) {
   return request({
     url: `/mgr/jvs-auth/job/users`,
     method: "get",

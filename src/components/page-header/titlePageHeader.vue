@@ -96,7 +96,8 @@ export default {
   .title {
     font-size: 18px;
     font-weight: 600;
-    font-family: SourceHanSansCN-Regular;
+    font-family: MiSans-Demibold;
+    //font-family: SourceHanSansCN-Regular;
     color: #333333;
     cursor: pointer;
     margin-right: 20px;

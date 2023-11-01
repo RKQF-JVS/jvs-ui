@@ -66,10 +66,14 @@ export const darkblueStyle={
       activeBefore: '#3471FF', // 激活状态竖线和icon颜色
     },
     topNav: {
-      backgroundColor: '#409eff', // '#3B4A6E', // 顶部工具栏背景颜色
-      fontColor: '#fff', // 顶部工具栏字体颜色
-      activeBackgroundColor: '#3471FF', // 顶部工具栏激活背景
-      activeColor: '#fff', // 顶部工具栏激活字体颜色
+      // backgroundColor: '#409eff', // '#3B4A6E', // 顶部工具栏背景颜色
+      // fontColor: '#fff', // 顶部工具栏字体颜色
+      // activeBackgroundColor: '#3471FF', // 顶部工具栏激活背景
+      // activeColor: '#fff', // 顶部工具栏激活字体颜色
+      backgroundColor: '#fff', // '#3B4A6E', // 顶部工具栏背景颜色
+      fontColor: '#333', // 顶部工具栏字体颜色
+      activeBackgroundColor: '#fff', // 顶部工具栏激活背景
+      activeColor: '#3471FF', // 顶部工具栏激活字体颜色
     },
     topMenu: {
       activeColor: '#4A8FF0', // 底部线条颜色
@@ -89,7 +93,8 @@ export const darkblueStyle={
       color: '#fff', // 字体颜色
       fontSize: '16px', // 字体大小
       fontWeight: 400, // 字体粗细
-      backgroundColor: '#409eff' // '#3B4A6E', // 背景颜色
+      // backgroundColor: '#409eff' // '#3B4A6E', // 背景颜色
+      backgroundColor: '#fff' // '#3B4A6E', // 背景颜色
     },
     // 表单设置
     form: {

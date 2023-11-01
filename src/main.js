@@ -1,5 +1,3 @@
-import "babel-polyfill";
-import "classlist-polyfill";
 import Vue from "vue";
 import axios from "./router/axios";
 import VueAxios from "vue-axios";
@@ -10,7 +8,7 @@ import "./permission"; // 权限
 import "./error"; // 日志
 import router from "./router/router";
 import store from "./store";
-import { loadStyle } from "./util/util";
+import { loadStyle,useOptionChain } from "./util/util";
 import * as urls from "@/config/env";
 import { iconfontUrl, iconfontVersion } from "@/config/env";
 import * as filters from "./filters"; // 全局filter
@@ -82,7 +80,10 @@ Object.keys(filters).forEach(key => {
 iconfontVersion.forEach(ele => {
     loadStyle(iconfontUrl.replace("$key", ele));
 });
-if(store.getters.access_token) {
+// if(store.getters.access_token) {
+//     getIconLib()
+// }
+if(window.self == window.top) {
     getIconLib()
 }
 
@@ -97,7 +98,7 @@ var instance = axios.create({
 })
 Vue.config.productionTip = false
 Vue.prototype.instance = instance
-
+Vue.prototype.useOptionChain = useOptionChain
 Vue.prototype.$isNotEmpty = function(obj){
     return (obj !== undefined && obj !== null && obj !== '' && obj !== 'null')
 }

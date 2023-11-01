@@ -16,7 +16,6 @@
             <div :class="(item.left && item.left.position == 'all') ? 'list-item-all': 'list-item-left'" v-if="!validatenullHandle(item.left)" :style="'height:'+getHeight(item, 'left')+'px;'">
               <messageItem v-if="item.left.type == 'message'" :item="item.left" />
               <iframeItem v-if="item.left.type == 'chart' || item.left.type == 'page' || item.left.type == 'http'" :item="item.left" />
-              <backlogItem v-if="item.left.type == 'backlog'" :item="item.left" />
               <newsItem v-if="item.left.type == 'news'" :item="item.left" />
               <calendarItem v-if="item.left.type == 'calendar'" :item="item.left" />
               <div class="wel-item-info" v-if="item.left.type == 'wel'" :item="item.left">
@@ -28,7 +27,6 @@
             <div :class="'list-item-right'" v-if="!validatenullHandle(item.right)" :style="'height'+getHeight(item, 'right')+'px;'">
               <messageItem v-if="item.right.type == 'message'" :item="item.right" />
               <iframeItem v-if="item.right.type == 'chart' || item.right.type == 'page' || item.right.type == 'http'" :item="item.right" />
-              <backlogItem v-if="item.right.type == 'backlog'" :item="item.right" />
               <newsItem v-if="item.right.type == 'news'" :item="item.right" />
               <calendarItem v-if="item.right.type == 'calendar'" :item="item.right" />
               <div class="wel-item-info" v-if="item.right.type == 'wel'" :item="item.right">
@@ -73,7 +71,6 @@
 import {validateURL, validatenull} from '@/util/validate'
 import {getWelInfo, getPageList, addWelInfo, delWelInfo, sortWel} from '@/api/wel'
 import messageItem from './message'
-import backlogItem from './todo'
 import newsItem from './news'
 import calendarItem from './calendar'
 import iframeItem from './iframe'
@@ -87,7 +84,7 @@ const validateURLHandle = (rule, value, callback) => {
 }
 export default {
   name: 'wel-index',
-  components: {messageItem, backlogItem, newsItem, calendarItem, iframeItem, jvsLoading},
+  components: {messageItem, newsItem, calendarItem, iframeItem, jvsLoading},
   data(){
     return {
       // 组件项

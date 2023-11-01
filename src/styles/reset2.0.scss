@@ -1,10 +1,17 @@
 // 弹框
 .el-dialog__wrapper:not(.form-fullscreen-dialog){
   .el-dialog{
+    border-radius: 8px;
+    .el-dialog__body{
+      //padding: 30px 40px;
+      //padding-top: 10px;
+      padding: 10px 40px 20px;
+    }
     .el-dialog__header{
       height: 20px;
       font-size: 20px;
-      font-family: SourceHanSansCN-Regular;
+      //font-family: SourceHanSansCN-Regular;
+      font-family: MiSans-Demibold;
       color: #333333;
       padding: 20px;
       display: flex;
@@ -29,16 +36,23 @@
       background: #3471FF;
       margin-right: 20px;
     }
-    .el-dialog__header::after{
-      content: "";
-      display: block;
-      width: calc(100% - 40px);
-      height: 1px;
-      background: #DCDFE6;
-      position: absolute;
-      bottom: 0;
+    //.el-dialog__header::after{
+    //  content: "";
+    //  display: block;
+    //  width: calc(100% - 40px);
+    //  height: 1px;
+    //  background: #DCDFE6;
+    //  position: absolute;
+    //  bottom: 0;
+    //}
+    .el-dialog__footer{
+      padding: 10px 40px 20px;
     }
   }
+}
+// 弹框遮罩层
+.v-modal{
+  border-radius: 8px;
 }
 
 
@@ -89,8 +103,8 @@
       .search-form{
         box-sizing: border-box;
         margin: 0;
-        padding: 20px 0;
-        border-bottom: 1px solid #DCDFE6;
+        padding: 20px 0 0;
+        //border-bottom: 1px solid #DCDFE6;
       }
     }
   }
@@ -100,11 +114,13 @@
       margin-top: 0!important;
       .el-table__header-wrapper{
         margin: 0!important;
+        border-radius: 6px;
         tr{
           th{
             box-sizing: border-box;
-            //height: 55px;
-            background-color: #F3F3F3;
+            height: 48px;
+            //background-color: #F3F3F3;
+            background-color: #F6F6F6;
             color: #333333;
             font-size: 14px;
             font-weight: normal;
@@ -119,7 +135,8 @@
             font-size: 12px;
             td{
               box-sizing: border-box;
-              height: 45px;
+              //height: 45px;
+              height: 60px;
               .el-button--text{
                 font-size: 12px;
                 color: #3471FF;
@@ -234,4 +251,46 @@
 // 气泡提示框
 .el-popover{
   padding: 12px 0;
+}
+// 气泡确认框
+.el-popconfirm{
+  padding: 0 12px;
+}
+// 滑块
+.el-slider__runway{
+  margin: 11px 0;
+}
+
+// 按钮
+.el-button{
+  font-weight: normal;
+}
+.el-button--default{
+  border: 1px #3471FF solid;
+  color: #3471FF;
+  &:hover{
+    border: 1px #3471FF solid;
+    color: #3471FF;
+    background-color: #EAF1FF;
+  }
+  &:focus{
+    border: 1px #3471FF solid;
+    color: #3471FF;
+    background-color: #ffffff;
+  }
+}
+.el-button--primary{
+  border: 1px #3471FF solid;
+  color: #fff;
+  &:hover{
+    border: 1px #3471FF solid;
+    color: #fff;
+    background-color: #5b8bff;
+  }
+}
+.el-button--text{
+  color: #3471FF;
+  &:hover{
+    color: #5b8bff;
+  }
 }

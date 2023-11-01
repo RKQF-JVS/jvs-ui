@@ -16,6 +16,12 @@
       <template slot="menuLeft">
         <jvs-button type="primary" size="mini" permisionFlag="upms_mgr_jiao_se_guan_li_xin_zeng" @click="addRole">新增角色</jvs-button>
       </template>
+      <template slot="menuRight">
+        <p style="cursor:pointer;display: flex;align-items: center;" @click="getList">
+          <span>刷新</span>
+          <i class="el-icon-refresh" style="cursor:pointer;margin-left:3px;"></i>
+        </p>
+      </template>
       <template slot="menu" slot-scope="scope">
         <jvs-button type="text" size="mini" permisionFlag="" @click="removeUser(scope.row)">移出租户</jvs-button>
       </template>
@@ -54,14 +60,14 @@
                     <li v-if="$permissionMatch('upms_mgr_jiao_se_guan_li_xiu_gai')" @click.stop="editRole(data)">
                       <span>修改角色</span>
                     </li>
-                    <li v-if="$permissionMatch('upms_mgr_jiao_se_guan_li_shan_chu')" @click.stop="() => delRow(data)">
-                      <span>删除角色</span>
-                    </li>
                     <li v-if="$permissionMatch('upms_mgr_jiao_se_guan_li_shan_chu')" @click.stop="addUser(data)">
                       <span>添加租户</span>
                     </li>
                     <li v-if="$permissionMatch('')" @click.stop="addDataAuthority(data)">
                       <span>数据权限</span>
+                    </li>
+                    <li v-if="$permissionMatch('upms_mgr_jiao_se_guan_li_shan_chu')" @click.stop="() => delRow(data)">
+                      <span style="color: #F56C6C;">删除角色</span>
                     </li>
                   </ul>
                   <i slot="reference" class="el-icon-more iconhover" @click.stop="moreRole(data)"></i>
@@ -178,13 +184,13 @@ export default {
     async addDataAuthority(data) {
       this.roleData = JSON.parse(JSON.stringify(data))
       await getRoleDataAuth(this.roleData.id).then(res => {
-        if (res.data && res.data.code == 0) {
+        if (res.data && res.data.code == 0 && res.data.data) {
           this.isBindList = [...res.data.data]
         }
       })
       await getAllDataAuth().then(res => {
         if (res.data && res.data.code == 0) {
-          const arr = [...res.data.data]
+          const arr = res.data.data ? [...res.data.data] : []
           arr.forEach(aItem => {
             if(aItem.value) {
               for(let ix in aItem.value) {
@@ -282,18 +288,18 @@ export default {
       this.rowData=row
       this.title='权限分配'
       getMenuAuth(row.id).then(res => {
-        if (res.data && res.data.code == 0) {
+        if (res.data && res.data.code == 0 && res.data.data) {
           this.menuAuthList = [...res.data.data]
         }
       })
       getAllMenu().then(res => {
         if (res.data && res.data.code==0) {
-          this.applicationList = [...res.data.data]
+          this.applicationList = res.data.data ? [...res.data.data] : []
           this.funOption = this.applicationList[0].children
           this.funOption.forEach(item => {
             item.checked = false
           })
-          this.terminalList = [...res.data.data]
+          this.terminalList = res.data.data ? [...res.data.data] : []
           this.currentTerminal = this.terminalList[0].id
           this.dialogVisible=true
         }
@@ -373,9 +379,11 @@ export default {
     display: flex;
     align-items: center;
     margin: 0;
-    margin-bottom: 10px;
+    height: 32px;
+    line-height: 32px;
+    //margin-bottom: 10px;
     cursor: pointer;
-    padding: 5px 10px;
+    padding: 6px 24px;
     i{
       margin-right: 10px;
       font-size: 14px!important;
@@ -480,15 +488,15 @@ export default {
   .role-tree {
     position: absolute;
     //top: 94px;
-    top: 72px;
+    top: 84px;
     left: 0;
     width: 250px;
     //height: calc(100% - 94px);
-    height: calc(100% - 72px);
+    height: calc(100% - 84px);
     overflow: hidden;
     overflow-y: auto;
     padding-left: 20px;
-    border-right: 1px solid #DCDFE6;
+    //border-right: 1px solid #DCDFE6;
     padding-top: 20px;
     padding-bottom: 20px;
     box-sizing: border-box;
@@ -520,6 +528,7 @@ export default {
     .el-tree-node{
       cursor: pointer;
       .el-tree-node__content{
+        padding-left: 6px;
         width: 100%;
       }
     }

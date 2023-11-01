@@ -6,6 +6,7 @@
       :visible.sync="dialogVisible"
       :before-close="handleClose"
       :fullscreen="true"
+      :close-on-click-modal="false"
     >
       <template>
         <div class="item">
@@ -201,7 +202,7 @@ export default {
       font-weight: bold;
     }
   }
-  ::v-deep .el-tree-node__children {
+  /deep/ .el-tree-node__children {
     display: flex;
   }
 }

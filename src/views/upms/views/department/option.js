@@ -1,227 +1,327 @@
 import Vue from "vue"
 import store from "@/store";
 export const tableOption = {
-    page: true,
-    align: 'center',
-    menuAlign: 'center',
-    viewBtn: false,
-    addBtn: false,
-    editBtn: false,
-    delBtn: false, // Vue.prototype.$permissionMatch("yong_hu_guan_lishan_chu_yong_hu"),
-    selection: false,
-    search: false,
-    inline: true,
-    showOverflow: true,
-    isSearch: true,
-    labelWidth: 'auto',
-    submitBtnText: '查询',
-    menuWidth: '250px',
-    cancal: false,
-    column: [
-      {
-        label: '头像',
-        prop: 'headImg',
-        display: false,
-        type: 'image',
-        slot: true
+  page: true,
+  // align: 'center',
+  // menuAlign: 'center',
+  viewBtn: false,
+  addBtn: false,
+  editBtn: false,
+  delBtn: false, // Vue.prototype.$permissionMatch("yong_hu_guan_lishan_chu_yong_hu"),
+  selection: false,
+  search: true, //false,
+  inline: true,
+  showOverflow: true,
+  isSearch: true,
+  labelWidth: 'auto',
+  submitBtnText: '查询',
+  menuWidth: '250px',
+  cancal: false,
+  column: [
+    {
+      label: '头像',
+      prop: 'headImg',
+      display: false,
+      type: 'image',
+      slot: true
+    },
+    {
+      label: '姓名',
+      prop: 'realName',
+      searchSpan: 4,
+      search: true,
+    },
+    {
+      label: '账号',
+      prop: 'accountName',
+      searchSpan: 4,
+      rules: [
+        { required: true, message: '请输入用户名', trigger: 'blur' }
+      ],
+      hide: store.getters.userInfo.adminFlag ? false : true,
+      search: store.getters.userInfo.adminFlag ? true : false,
+    },
+    {
+      label: '性别',
+      prop: 'sex',
+      searchSpan: 4,
+      type: 'select',
+      search: true,
+      dicData: [
+        {label: '男', value: 'male'},
+        {label: '女', value: 'female'},
+        {label: '保密', value: 'unknown'}
+      ],
+    },
+    {
+      label: '手机号',
+      prop: 'phone',
+      searchSpan: 4,
+      search: true,
+      rules: [
+        { required: true, message: '请输入手机号', trigger: ['blur'] }
+      ]
+    },
+    {
+      label: '角色',
+      prop: 'roleNames',
+      span: 24,
+      // hide: true,
+      slot: true,
+      display: false,
+    },
+    {
+      label: '角色',
+      prop: 'roleIds',
+      span: 24,
+      dicData: [],
+      multiple: true,
+      hide: true,
+      formSlot: true,
+      props: {
+        label: 'roleName',
+        value: 'id'
       },
-      {
-        label: '账号',
-        prop: 'accountName',
-        span: 6,
-        formSlot: true,
-        rules: [
-          { required: true, message: '请输入用户名', trigger: 'blur' }
-        ],
-        display: false,
-        hide: store.getters.userInfo.adminFlag ? false : true
+      // tips: {
+      //   position: 'bottom',
+      //   text: '用作功能权限'
+      // },
+      display: false
+    },
+    {
+      label: "部门",
+      prop: "deptId",
+      span: 6,
+      hide: true,
+      formSlot: true,
+    },
+    {
+      label: '部门',
+      prop: 'deptName',
+      span: 24,
+      display: false
+      // tips: {
+      //   position: 'bottom',
+      //   text: '用作数据权限'
+      // },
+    },
+    {
+      label: '邮箱',
+      prop: 'email',
+      span: 6,
+      hide: true,
+      rules: [
+        { required: true, message: '请输入邮箱', trigger: ['blur'] },
+        { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
+      ]
+    },
+    {
+      label: "岗位",
+      prop: "jobName",
+      span: 6,
+      display: false
+    },
+    {
+      label: "创建时间",
+      prop: "createTime",
+      // span: 6,
+      display: false,
+      type: "datePicker",
+      datetype: 'datetime',
+      format: "yyyy-MM-dd HH:mm:ss",
+      valueFormat: "yyyy-MM-dd HH:mm:ss",
+      sort: true,
+      width: 100,
+      span: 12
+    },
+    {
+      label: "职位",
+      prop: "jobId",
+      span: 6,
+      hide: true,
+      type: "select",
+      slot: true,
+      placeholder: '请输入或选择职位',
+      clearable: true,
+      dicData: [],
+      props: {
+        label: 'name',
+        value: 'id'
       },
-      {
-        label: '姓名',
-        prop: 'realName',
-        span: 6,
-        rules: [
-          { required: true, message: '请输入真名', trigger: 'blur' }
-        ]
+      // tips: {
+      //   position: 'bottom',
+      //   text: '用作数据权限'
+      // },
+      filterable: true
+    },
+    {
+      label: '账号等级',
+      prop: 'level',
+      span: 24,
+      hide: true,
+      type: 'inputNumber',
+      min: 1,
+      precision: 0,
+      // tips: {
+      //   position: 'bottom',
+      //   text: '用作数据权限'
+      // },
+    },
+    {
+      label: '状态',
+      prop: 'lockFlag',
+      type: 'switch',
+      span: 24,
+      hide: true,
+      dicData: [
+        { label: '未锁定', value: false },
+        { label: '锁定', value: true }
+      ],
+      activetext: '锁定',
+      inactivetext: '未锁定',
+      tips: {
+        position: 'bottom',
+        text: '用户锁定后，将无法登录'
       },
-      {
-        label: '昵称',
-        prop: 'nickName',
-        span: 6,
-        hide: true,
-        display: false
-      },
-      {
-        label: '性别',
-        prop: 'sex',
-        span: 6,
-        type: 'radio',
-        dicData: [
-          {label: '男', value: 'male'},
-          {label: '女', value: 'female'},
-          {label: '保密', value: 'unknown'}
-        ],
-      },
-      {
-        label: '手机号',
-        prop: 'phone',
-        span: 6,
-        rules: [
-          { required: true, message: '请输入手机号', trigger: ['blur'] }
-        ]
-      },
-      {
-        label: '角色',
-        prop: 'roleName',
-        span: 24,
-        hide: true,
-        slot: true,
-        display: false,
-      },
-      {
-        label: '角色',
-        prop: 'roleIds',
-        span: 24,
-        dicData: [],
-        multiple: true,
-        hide: true,
-        formSlot: true,
-        props: {
-          label: 'roleName',
-          value: 'id'
-        },
-        // tips: {
-        //   position: 'bottom',
-        //   text: '用作功能权限'
-        // },
-        display: false
-      },
-      {
-        label: "部门",
-        prop: "deptId",
-        span: 6,
-        hide: true,
-        formSlot: true,
-      },
-      {
-        label: '部门',
-        prop: 'deptName',
-        span: 24,
-        display: false
-        // tips: {
-        //   position: 'bottom',
-        //   text: '用作数据权限'
-        // },
-      },
-      {
-        label: '邮箱',
-        prop: 'email',
-        span: 6,
-        hide: true,
-        rules: [
-          { required: true, message: '请输入邮箱', trigger: ['blur'] },
-          { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
-        ]
-      },
-      {
-        label: "岗位",
-        prop: "jobName",
-        span: 6,
-        display: false
-      },
-      {
-        label: "创建时间",
-        prop: "createTime",
-        // span: 6,
-        display: false,
-        type: "datePicker",
-        datetype: 'datetime',
-        format: "yyyy-MM-dd HH:mm:ss",
-        valueFormat: "yyyy-MM-dd HH:mm:ss",
-        sort: true,
-        span: 12
-      },
-      {
-        label: "职位",
-        prop: "jobId",
-        span: 6,
-        hide: true,
-        type: "select",
-        slot: true,
-        placeholder: '请输入或选择职位',
-        clearable: true,
-        dicData: [],
-        props: {
-          label: 'name',
-          value: 'id'
-        },
-        // tips: {
-        //   position: 'bottom',
-        //   text: '用作数据权限'
-        // },
-        filterable: true
-      },
-      {
-        label: '账号等级',
-        prop: 'level',
-        span: 24,
-        hide: true,
-        type: 'inputNumber',
-        min: 1,
-        precision: 0,
-        // tips: {
-        //   position: 'bottom',
-        //   text: '用作数据权限'
-        // },
-      },
-      {
-        label: '状态',
-        prop: 'lockFlag',
-        type: 'switch',
-        span: 24,
-        hide: true,
-        dicData: [
-          { label: '未锁定', value: false },
-          { label: '锁定', value: true }
-        ],
-        activetext: '锁定',
-        inactivetext: '未锁定',
-        tips: {
-          position: 'bottom',
-          text: '用户锁定后，将无法登录'
-        },
-        display: false
-      },
-      {
-        label: '职工编号',
-        prop: 'employeeNo',
-        span: 6,
-        hide: true
-      },
-      {
-        label: '生日',
-        prop: 'birthday',
-        span: 6,
-        hide: true,
-        type: 'datePicker',
-        datetype: 'date',
-        format: "yyyy-MM-dd",
-        valueFormat: "yyyy-MM-dd",
-        display: false
-      },
-      {
-        label: '入职日期',
-        prop: 'hireDate',
-        span: 6,
-        hide: true,
-        type: 'datePicker',
-        datetype: 'date',
-        format: "yyyy-MM-dd",
-        valueFormat: "yyyy-MM-dd",
-        display: false
-      }
+      display: false
+    },
+    {
+      label: '职工编号',
+      prop: 'employeeNo',
+      span: 6,
+      hide: true
+    },
+    {
+      label: '生日',
+      prop: 'birthday',
+      span: 6,
+      hide: true,
+      type: 'datePicker',
+      datetype: 'date',
+      format: "yyyy-MM-dd",
+      valueFormat: "yyyy-MM-dd",
+      display: false
+    },
+    {
+      label: '入职日期',
+      prop: 'hireDate',
+      span: 6,
+      hide: true,
+      type: 'datePicker',
+      datetype: 'date',
+      format: "yyyy-MM-dd",
+      valueFormat: "yyyy-MM-dd",
+      display: false
+    }
+  ]
+}
+
+export const formOptionColumn = [
+  {
+    label: '姓名',
+    prop: 'realName',
+    span: 12,
+    rules: [
+      { required: true, message: '请输入姓名', trigger: 'blur' }
     ]
-  }
+  },
+  {
+    label: '账号',
+    prop: 'accountName',
+    rules: [
+      { required: true, message: '请输入账号', trigger: 'blur' },
+      { pattern: `^[a-zA-Z]+$`, message:'请输入字母', trigger: 'change'}
+    ],
+    display: store.getters.userInfo.adminFlag ? true : false
+  },
+  {
+    label: '性别',
+    prop: 'sex',
+    span: 12,
+    type: 'radio',
+    dicData: [
+      {label: '男', value: 'male'},
+      {label: '女', value: 'female'},
+      {label: '保密', value: 'unknown'}
+    ],
+  },
+  {
+    label: '手机号',
+    prop: 'phone',
+    span: 12,
+    search: true,
+    rules: [
+      { required: true, message: '请输入手机号', trigger: ['blur'] }
+    ]
+  },
+  {
+    label: "部门",
+    prop: "deptId",
+    span: 12,
+    type: 'department',
+    formSlot: true,
+  },
+  {
+    label: '邮箱',
+    prop: 'email',
+    span: 12,
+    rules: [
+      { required: true, message: '请输入邮箱', trigger: ['blur'] },
+      { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
+    ]
+  },
+  {
+    label: "职位",
+    prop: "jobId",
+    span: 12,
+    type: "select",
+    slot: true,
+    placeholder: '请输入或选择职位',
+    clearable: true,
+    dicData: [],
+    props: {
+      label: 'name',
+      value: 'id'
+    },
+    // tips: {
+    //   position: 'bottom',
+    //   text: '用作数据权限'
+    // },
+    filterable: true
+  },
+  // {
+  //   label: '账号等级',
+  //   prop: 'level',
+  //   span: 24,
+  //   type: 'inputNumber',
+  //   min: 1,
+  //   precision: 0,
+  //   // tips: {
+  //   //   position: 'bottom',
+  //   //   text: '用作数据权限'
+  //   // },
+  // },
+  {
+    label: '账号等级',
+    prop: 'level',
+    span: 24,
+    type: 'select',
+    dicUrl: '/mgr/jvs-auth//level/dict',
+    props: {
+      label: 'name',
+      value: 'name'
+    },
+    // tips: {
+    //   position: 'bottom',
+    //   text: '用作数据权限'
+    // },
+  },
+  {
+    label: '职工编号',
+    prop: 'employeeNo',
+    span: 12,
+  },
+]
 
 export const importOptionData = {
   addBtn: false,
@@ -231,8 +331,8 @@ export const importOptionData = {
   page: false,
   delBtn: false,
   showOverflow: false,
-  align: 'center',
-  menuAlign: 'center',
+  // align: 'center',
+  // menuAlign: 'center',
   column: [
     {
       label: '用户名',

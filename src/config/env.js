@@ -3,7 +3,8 @@
 const env = process.env
 let baseUrl = ''
 // 图表库为jvs
-let iconfontVersion = ['2514494_kvtmaqepi8f', '567566_qo5lxgtishg', '667895_v7uduh4zui', '2052824_mnq40bpm1w',]
+// let iconfontVersion = ['2514494_kvtmaqepi8f', '567566_qo5lxgtishg', '667895_v7uduh4zui', '2052824_mnq40bpm1w',]
+let iconfontVersion = []
 // '2052824_mnq40bpm1w' 老的图标选择
 // '2514494_kvtmaqepi8f' 基础框架平台图标库
 let iconfontUrl = `//at.alicdn.com/t/font_$key.css`

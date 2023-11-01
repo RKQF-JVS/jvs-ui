@@ -15,7 +15,7 @@
           <!-- 文本框 -->
           <el-input v-if="!item.type || item.type == 'input'" v-model="formData[item.prop]" :placeholder="item.label"></el-input>
           <!-- 颜色选择器 -->
-          <el-color-picker v-if="item.type == 'color-select'" v-model="formData[item.prop]" :placeholder="item.label"></el-color-picker>
+          <el-color-picker v-if="item.type == 'color-select'" v-model="formData[item.prop]" :placeholder="item.label" :predefine="predefineColors"></el-color-picker>
           <!-- 数字 -->
           <el-input-number
             v-if="item.type == 'number'"
@@ -44,7 +44,7 @@
               <!-- 文本框 -->
               <el-input v-if="!it.type || it.type == 'input'" v-model="formData[item.prop][it.prop]"></el-input>
               <!-- 颜色选择器 -->
-              <el-color-picker v-if="it.type == 'color-select'" v-model="formData[item.prop][it.prop]"></el-color-picker>
+              <el-color-picker v-if="it.type == 'color-select'" v-model="formData[item.prop][it.prop]" :predefine="predefineColors"></el-color-picker>
               <!-- 数字 -->
               <el-input-number
                 v-if="it.type == 'number'"
@@ -102,6 +102,32 @@ export default {
         }
       }
     },
+  },
+  data() {
+    return {
+      predefineColors: [
+        '#ffd700',
+        '#ff8c00',
+        '#ff4500',
+        '#c71585',
+        '#FF99CC',
+        '#FF6666',
+        '#CCCCFF',
+        '#CCCCCC',
+        '#99CCFF',
+        '#99CC99',
+        '#90ee90',
+        '#66CC66',
+        '#669933',
+        '#663366',
+        '#490954',
+        '#3471ff',
+        '#333300',
+        '#1e90ff',
+        '#00ced1',
+        '#003399'
+      ],
+    }
   },
   created () {
     // console.log(this.formData)

@@ -19,39 +19,47 @@
         @search-change="searchChange"
       >
         <template slot="menuLeft">
+          <jvs-button v-if="true" type="primary" size="mini" @click="invitationHandle" permisionFlag="upms_dept_invite">邀请用户</jvs-button>
+          <jvs-button type="primary" size="mini" @click="editItem(null, 'add', null)" permisionFlag="upms_dept_add">添加用户</jvs-button>
           <jvs-button type="primary" size="mini" @click="dialogVisibleShow('add', null, null, 'dept')" permisionFlag="upms_dept_add">添加部门</jvs-button>
-          <!-- <jvs-button type="primary" size="mini" @click="invitationHandle" permisionFlag="upms_dept_invite">邀请成员</jvs-button>-->
+          <!-- <jvs-button type="primary" size="mini" @click="invitationHandle" permisionFlag="upms_dept_invite">邀请成员</jvs-button> -->
+          <jvs-button type="primary" size="mini" @click="importUserDialogVisible = true;">导入用户</jvs-button>
           <el-upload
-            v-if="false && $permissionMatch('')"
+            v-if="$permissionMatch('')&& false"
             ref="uploadBtn"
             style="display: inline-block;margin: 0 10px;"
-            action="/mgr/jvs-auth/usermanager/import/preview"
+            action="/mgr/jvs-auth/user/import"
             accept=".xls,.xlsx"
             :limit="1"
             :on-change="handleFileChange"
-            :http-request="httpHandle"
             :on-success="importView"
             :on-error="errHandle"
             :show-file-list="false"
             :file-list="fileList"
             :headers="headers"
           >
+            <!-- :http-request="httpHandle" -->
             <jvs-button type="primary" size="mini">导入用户</jvs-button>
           </el-upload>
-          <jvs-button v-if="false" type="primary" size="mini" @click="downloadModel" permisionFlag="">导出模板</jvs-button>
+          <jvs-button type="primary" size="mini" @click="downloadModel" permisionFlag="">导出模板</jvs-button>
+          <jvs-button v-if="false && $store.getters.userInfo.platformAdmin" type="primary" size="mini" @click="syncUser" permisionFlag="">同步用户</jvs-button>
+          <jvs-button type="primary" size="mini" @click="sysDept('DINGTALK_INSIDE')" permisionFlag="" :loading="sysddLoading" :disabled="sysqwLoading">同步钉钉组织</jvs-button>
+          <jvs-button type="primary" size="mini" @click="sysDept('WECHAT_ENTERPRISE_WEB')" permisionFlag="" :loading="sysqwLoading" :disabled="sysddLoading">同步企业微信组织</jvs-button>
+          <jvs-button v-if="syncBtns.indexOf('OWN') > -1" type="primary" size="mini" @click="sysDept(syncObj['OWN'])" permisionFlag="" :loading="sysqwLoading" :disabled="sysddLoading">同步企业组织</jvs-button>
+          <jvs-button v-if="syncBtns.indexOf('STANDARD_OWN') > -1" type="primary" size="mini" @click="sysDept(syncObj['STANDARD_OWN'])" permisionFlag="" :loading="sysqwLoading" :disabled="sysddLoading">同步企业组织</jvs-button>
         </template>
         <template slot="menu" slot-scope="scope">
           <jvs-button type="text" size="mini" @click="editItem(scope.row, 'edit')" permisionFlag="upms_dept_editUser">编辑</jvs-button>
           <jvs-button type="text" size="mini" @click="editItem(scope.row, 'view')" permisionFlag="upms_dept_viewUser">详情</jvs-button>
           <jvs-button type="text" size="mini" v-if="false" @click="setPermissin(scope.row)" permisionFlag="upms_dept_permision_data">数据权限</jvs-button>
-          <jvs-button size="mini" type='text' v-if="!scope.row.cancelFlag" permisionFlag="upms_dept_disableUser" @click="disableHandle(scope.row)">禁用</jvs-button>
-          <jvs-button size="mini" type='text' v-else permisionFlag="upms_dept_enableUser" @click="disableHandle(scope.row)">启用</jvs-button>
+          <jvs-button size="mini" type='text' v-if="!scope.row.cancelFlag" permisionFlag="upms_dept_disableUser" @click="disableHandle(scope.row)">删除</jvs-button>
+          <!-- <jvs-button size="mini" type='text' v-if="$store.getters.userInfo.accountName == 'admin'" @click="editPassHandle(scope.row)">修改密码</jvs-button> -->
         </template>
         <template slot="headImg" slot-scope="scope">
           <img v-if="scope.row.headImg" :src="scope.row.headImg" alt="" style="display: inline-block;width: 40px;height: 40px;border-radius: 50%;overflow: hidden;">
         </template>
-        <template slot="roleName" slot-scope="scope">
-          {{ scope.row.roleName && scope.row.roleName.join(",") }}
+        <template slot="roleNames" slot-scope="scope">
+          {{ scope.row.roleNames && scope.row.roleNames.join(",") }}
         </template>
       </jvs-table>
       <div class="treeBox dept-treeBox">
@@ -82,7 +90,7 @@
                 v-model="data.moretool"
                 trigger="click">
                 <ul class="base-type-list">
-                  <li v-if="$permissionMatch('upms_dept_edit')" @click.stop="() => dialogVisibleShow('edit', node, data, 'dept')">
+                  <li v-if="$permissionMatch('upms_dept_edit') && data.extend.type == 'dept'" @click.stop="() => dialogVisibleShow('edit', node, data, 'dept')">
                     <!-- <i class="el-icon-setting iconhover"></i> -->
                     <span>修改部门</span>
                   </li>
@@ -90,13 +98,21 @@
                     <!-- <i class="el-icon-circle-plus-outline iconhover"></i> -->
                     <span>添加子部门</span>
                   </li>
-                  <li v-if="$permissionMatch('upms_dept_addUser')" @click.stop="() => editItem(null, 'add', data)">
+                  <li v-if="$permissionMatch('upms_dept_edit') && data.extend.type == 'branchOffice'" @click.stop="() => dialogVisibleShow('edit', node, data, 'branchOffice')">
+                    <!-- <i class="el-icon-setting iconhover"></i> -->
+                    <span>修改公司</span>
+                  </li>
+                  <li v-if="$permissionMatch('upms_dept_add')" @click.stop="() => dialogVisibleShow('addchild', node, data, 'branchOffice')">
+                    <!-- <i class="el-icon-circle-plus-outline iconhover"></i> -->
+                    <span>添加公司</span>
+                  </li>
+                  <li v-if="$permissionMatch('upms_dept_addUser') && data.level != 1" @click.stop="() => editItem(null, 'add', data)">
                     <!-- <i class="el-icon-circle-plus-outline iconhover"></i> -->
                     <span>添加成员</span>
                   </li>
                   <li v-if="$permissionMatch('upms_dept_delete')" @click.stop="() => remove( node ,data, '机构')">
                     <!-- <i class="el-icon-delete iconhover"></i> -->
-                    <span>删除</span>
+                    <span style="color: #F56C6C;">删除</span>
                   </li>
                 </ul>
                 <i slot="reference" class="el-icon-more iconhover" @click.stop="moreDept(data)"></i>
@@ -116,7 +132,7 @@
       :close-on-press-escape="true"
     >
       <div v-if="dialogVisible">
-        <div v-if="formType == 'dept'">
+        <div v-if="formType == 'dept' || formType == 'branchOffice'">
           <jvs-form refs="Form" :option="deptOption" :formData="Form" @submit="doSubmit" @cancalClick="handleClose">
             <template slot="parentIdForm">
               <el-cascader
@@ -146,7 +162,7 @@
       :title="title"
       :visible.sync="userVisible"
       :before-close="userClose"
-      class="form-fullscreen-dialog"
+      :close-on-click-modal="false"
     >
       <jvs-form
         style="padding: 0 60px"
@@ -181,7 +197,7 @@
         <template slot="deptIdForm">
           <div class="jvs-form-item" style="display:flex;align-items:center;">
             <el-cascader
-              :disabled="title == '新增' ? true : false"
+              :disabled="(title == '新增' && currentNode) ? true : false"
               style="width:100%;"
               v-model="userForm.deptId"
               size="mini"
@@ -202,6 +218,7 @@
       :fullscreen="(fileList && fileList.length > 5) ? true : false"
       :class="{'import-user-dialog': true, 'form-fullscreen-dialog user-import-fullscreen-dialog': (fileList && fileList.length > 5)}"
       :visible.sync="importVisible"
+      :close-on-click-modal="false"
       :before-close="cancelHandle">
       <jvs-table :option="importOption" :data="fileList">
         <template slot="menu" slot-scope="scope">
@@ -307,21 +324,124 @@
     </el-dialog>
     <!-- 邀请 -->
     <invitation ref="invitation"></invitation>
+    <!-- 修改密码 -->
+    <el-dialog
+      title="修改密码"
+      :visible.sync="passVisible"
+      :close-on-click-modal="false"
+      :before-close="passClose">
+      <div v-if="passVisible" class="user-info-content-dialog">
+        <jvs-form ref="passForm" :option="passOption" :formData="passForm" @submit="submitPassWord" @cancalClick="passClose">
+        </jvs-form>
+      </div>
+    </el-dialog>
+    <!-- 导入数据 -->
+    <el-dialog
+      title="导入用户"
+      :visible.sync="importUserDialogVisible"
+      width="720px"
+      append-to-body
+      :close-on-click-modal="false"
+      :before-close="handleCloseImport">
+      <div class="import-data-box">
+        <el-upload
+        ref="uploadBtn"
+          style="display: inline-block;margin: 0 10px;"
+          action="/mgr/jvs-auth/user/import"
+          accept=".xls,.xlsx"
+          :limit="1"
+          :on-change="handleFileChange"
+          :on-success="importView"
+          :on-error="errHandle"
+          :show-file-list="false"
+          :file-list="fileList"
+          :headers="headers"
+          class="import-data-upload"
+          :before-upload="beforeUpload"
+          drag
+        >
+          <div class="el-upload__text">
+            <svg aria-hidden="true" style="width: 24px; height: 24px;margin-bottom: 16px">
+              <use xlink:href="#icon-upload"></use>
+            </svg>
+            <div>点击或者拖动文件到虚线框内上传</div>
+            <div style="color: #a2a3a5;font-size: 12px;margin-top: 8px;">支持xls，xlsx等类型的文件</div>
+          </div>
+        </el-upload>
+        <div class="upload-explain">
+          <span style="color: #a2a3a5;">上传的Excel表符合以下规范：</span>
+          <ul>
+            <li style="list-style: disc">文件大小不超过<span>10M</span>，且单个sheet页数据量不超过5000行</li>
+            <li style="list-style: disc">仅支持<span>（*.xls和*.xlsx）</span>文件</li>
+            <li style="list-style: disc">请确保您需要导入的sheet表头中<span>不包含空的单元格</span>，否则该sheet页数据系统将不做导入</li>
+            <li style="list-style: disc">批量导入的数据不支持“内置变量”作为条件的过滤</li>
+            <li style="list-style: disc">导入文件<span>不支持Excel公式计算</span>，如SUM，=H2*J2等</li>
+          </ul>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { getDeptList, getDeptUserList, AddDept, addUser, editUser, enableDisUser, editDept, deleteDept } from './api'
+import {
+  getDeptList,
+  getDeptUserList,
+  AddDept,
+  addUser,
+  editUser,
+  enableDisUser,
+  editDept,
+  deleteDept,
+  sysDepartment,
+  getSyncBtns
+} from './api'
 import { getRoleList } from '../role/api'
 import { getPostList } from '../postList/api'
-import { tableOption, importOptionData } from './option'
+import { tableOption, formOptionColumn, importOptionData } from './option'
 import {sendMyRequire} from '@/api/newDesign'
 import { importUser } from '../../api/user.js'
-
 import invitation from './invitation'
+import {setUserPassWord} from '@/api/admin/user'
+import { encryption } from "@/util/util";
+import {enCodePasswordKey} from "@/const/const"
+import {isMobile} from '@/util/validate'
+var validateReMobile = (rule, value, callback) => {
+  if (value) {
+    if (!isMobile(value)) {
+      callback(new Error('手机号码格式错误!'));
+    } else {
+      callback();
+    }
+  } else {
+    callback(new Error('请输入手机号码'));
+  }
+};
 export default {
   components: {invitation},
   data () {
+    var validatePassReg = (rule, value, callback) => {
+      if(value && value.length < 16) {
+        callback();
+      }else{
+        if(!value) {
+          callback(new Error('请输入密码'));
+        }else{
+          callback(new Error('密码不能超过15位'));
+        }
+      }
+    };
+    var validateRePassReg = (rule, value, callback) => {
+      if(value == this.passForm.password) {
+        callback();
+      }else{
+        if(!value) {
+          callback(new Error('请输入密码'));
+        }else{
+          callback(new Error('两次密码不一致'));
+        }
+      }
+    };
     // 这里存放数据
     return {
       orders: [],
@@ -366,6 +486,8 @@ export default {
           children: node.children,
         }
       },
+      roleLsit: [],
+      rowData: null,
       currentList: [], // 当前同级的部门列表
       lastName: '', // 未修改前的名字
       disSubmit: false, // 是否禁止提交
@@ -415,14 +537,15 @@ export default {
         cancal: false,
         submitLoading: false,
         disabled: false,
-        column: JSON.parse(JSON.stringify(tableOption.column))
+        formAlign: 'top',
+        column: JSON.parse(JSON.stringify(formOptionColumn))
       },
       repeatPhone: [], // 重复的手机号
       repeatName: [], // 重复的用户名
       deptListImport: [], // 导入用户-部门列表
       headers: {
         tenantId: this.$store.getters.userInfo.tenantId,
-        Authorization: this.$store.getters.access_token
+        Authorization: 'Bearer ' + this.$store.getters.access_token,
       },
       importLoading: false,
       validateUserName: (rule, value, callback) => {
@@ -442,6 +565,39 @@ export default {
       importVisible: false, // 导入弹框
       importOption: importOptionData,
       userVisible: false, // 用户信息弹框
+      passVisible: false, // 修改密码弹框
+      passForm: {},
+      passOption: {
+        cancal: true,
+        submitLoading: false,
+        emptyBtn: false,
+        column: [
+          {
+            label: '密码',
+            prop: 'password',
+            showpassword: true,
+            rules: [
+              { required: true, message: '请输入密码', trigger: 'blur' },
+              { validator: validatePassReg, trigger: 'blur'}
+            ]
+          },
+          {
+            label: '确认密码',
+            prop: 'rePassword',
+            showpassword: true,
+            rules: [
+              { required: true, message: '请输入密码', trigger: 'blur' },
+              { validator: validateRePassReg, trigger: 'blur'}
+            ]
+          }
+        ]
+      },
+      importUserDialogVisible: false,
+      currentNode: null,
+      sysddLoading: false,
+      sysqwLoading: false,
+      syncBtns: [], //同步按钮
+      syncObj: [], //同步按钮对象
     }
   },
   // 监听属性 类似于data概念
@@ -475,23 +631,26 @@ export default {
       if (this.$refs.Form) {
         this.$refs.Form.resetFields();
       }
-      if(type == 'dept' && data && node) {
+      if((type == 'dept' || type == 'branchOffice') && data && node) {
         this.selectOneId = data.id
         this.selectOneData = data
         this.currentList = node.parent.childNodes
+        this.deptOption.column[1].label = type == 'dept' ? '部门名称' : '公司名称'
+        this.deptOption.column[3].label = type == 'dept' ? '部门负责人' :  '公司负责人'
       }
 
       this.method = method
       this.formType = type
       this.dialogVisible = true
-      if(type == 'dept') {
+      if(type == 'dept' || type == 'branchOffice') {
         if (method == 'add') {
-          this.title = "添加部门"
+          this.title = type == 'dept' ? "添加部门" : '添加公司'
           this.Form = {
             name: '',
             parentId: [],
             sort: 0,
-            leaderId: ''
+            leaderId: '',
+            type: type
           }
           this.currentId = ''
           for(let i in this.treedata) {
@@ -506,12 +665,14 @@ export default {
           //   }
           // })
         }else if(method == 'addchild') {
-          this.title = "添加子部门"
+          this.title = type == 'dept' ? "添加子部门" : '添加公司'
+          // this.title = "添加子部门"
           this.Form = {
             name: '',
             parentId: [],
             sort: 0,
-            leaderId: ''
+            leaderId: '',
+            type: type
           }
           this.currentId = data.id
           if(data.parentId) {
@@ -522,7 +683,6 @@ export default {
               }
             }
             this.getDeptPath(data.id, this.treedata)
-            console.log(data)
             this.Form.parentId = this.pathArr
             this.Form.parentId.push(data.id)
           }
@@ -532,7 +692,7 @@ export default {
           //   }
           // })
         }else {
-          this.title = "修改部门"
+          this.title = type == 'dept' ? "修改部门" : '修改公司'
           let obj = JSON.parse(JSON.stringify(this.selectOneData))
           this.currentId = this.selectOneData.id
           if(obj.parentId) {
@@ -561,7 +721,7 @@ export default {
           // })
         }
       }
-      if(type == 'user') {
+      if(type == 'branchOffice') {
 
       }
     },
@@ -580,11 +740,13 @@ export default {
       this.getList(page)
     },
     // 搜素回调
-    searchChange () {
-
+    searchChange (form) {
+      this.queryParams = JSON.parse(JSON.stringify(form))
+      this.getList()
     },
     // 列表加载
     getList (page) {
+      this.tableLoading=true
       const arr = [...this.orders]
       let str = ''
       let temp = ''
@@ -597,22 +759,28 @@ export default {
         paramStr = temp.replace(/&/, '?')
       }
       let tp = {
-        current: this.page.currentPage,
-        size: this.page.pageSize
+        current: page && page.current ? page.current : this.page.currentPage,
+        size: this.page.pageSize,
+        cancelFlag: false
       }
       if(this.selectOneId){
         tp.deptId = this.selectOneId
       }
-      getDeptUserList( Object.assign({}, tp), paramStr).then(({ data }) => {
+      getDeptUserList( Object.assign(this.queryParams, tp), paramStr).then(({ data }) => {
+        this.tableLoading=false
         if(data.code == 0 && data.data) {
           this.tableData = data.data.records
           this.page.currentPage = data.data.current
           this.page.total = data.data.total
         }
+      }).catch(err => {
+        this.tableLoading=false
       })
     },
     // 编辑
     editItem (row, type, nodeData) {
+      // console.log(nodeData)
+      this.currentNode = nodeData
       this.rowData={}
       if (row) {
         this.rowData = row
@@ -640,8 +808,14 @@ export default {
         this.title='新增'
         let obj = {
           cancelFlag: false,
-          deptId: nodeData.id
+          deptId: nodeData ? nodeData.id : ''
         }
+        this.formOption.column.filter(it => {
+          if(it.prop == 'deptId') {
+            it.formSlot = true
+          }
+        })
+        this.formOption.disabled = false
         this.userForm= obj
       }
       this.userVisible=true
@@ -660,10 +834,12 @@ export default {
       this.formOption.submitLoading = true
       if (this.title=='编辑') {
         if(obj.deptId) {
-          if(obj.deptId.length > 0) {
-            obj.deptId = obj.deptId[obj.deptId.length-1]
-          }else{
-            obj.deptId = null
+          if(typeof obj.deptId == 'object') {
+            if(obj.deptId.length > 0) {
+              obj.deptId = obj.deptId[obj.deptId.length-1]
+            }else{
+              obj.deptId = null
+            }
           }
         }
         editUser(obj).then(res => {
@@ -682,6 +858,15 @@ export default {
           this.formOption.submitLoading = false
         })
       } else {
+        if(obj.deptId) {
+          if(typeof obj.deptId == 'object') {
+            if(obj.deptId.length > 0) {
+              obj.deptId = obj.deptId[obj.deptId.length-1]
+            }else{
+              obj.deptId = null
+            }
+          }
+        }
         addUser(obj).then(res => {
           if (res.data.code==0) {
             this.$message.success('新增用户成功')
@@ -708,7 +893,6 @@ export default {
       this.getList(this.page)
     },
     remove (node, data, type) {
-      console.log(data)
       this.$confirm('是否删除此数据, 是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -722,7 +906,6 @@ export default {
                 message: '删除机构成功',
               })
               this.getTreeDept()
-              this.getDeptListHandle()
             } else {
             }
           })
@@ -765,11 +948,10 @@ export default {
         }
         AddDept(obj).then(({ data }) => {
           if (data.code === 0) {
-            this.$message.success("添加部门成功")
+            this.$message.success("添加成功")
             this.deptOption.submitLoading = false
             this.getTreeDept()
             this.handleClose()
-            this.getDeptListHandle()
           }
         }).catch(e => {
           this.deptOption.submitLoading = false
@@ -786,10 +968,9 @@ export default {
         }
         editDept(obj).then(({ data }) => {
           if (data.code === 0) {
-            this.$message.success("修改部门成功")
+            this.$message.success("修改成功")
             this.deptOption.submitLoading = false
             this.getTreeDept()
-            this.getDeptListHandle()
             this.handleClose()
           }
         }).catch(e => {
@@ -801,8 +982,14 @@ export default {
       this.treeLoading = true;
       getDeptList().then(res => {
         if(res.data.code == 0) {
-          this.treedata = this.getTree(res.data.data, 1)
+          if(res.data.data) {
+            this.deptList = JSON.parse(JSON.stringify(res.data.data))
+            let tp = JSON.parse(JSON.stringify(res.data.data))
+            this.deptListImport = [{id: 'ditto', name: '同上'}].concat(tp)
+            this.treedata = this.getTree(res.data.data, 1)
+          }
           this.treeLoading = false;
+          this.$forceUpdate()
         }
       })
     },
@@ -824,13 +1011,21 @@ export default {
     },
     // 禁用 启用
     disableHandle (row) {
-      let str = '禁用'
+      let str = '删除'
+      // if(!row.cancelFlag) {
+      //   str = '删除'
+      // }else{
+      //   str = '解除锁定'
+      // }
+      let tips = '确定'+str+'该用户？'
       if(!row.cancelFlag) {
-        str = '禁用'
-      }else{
-        str = '启用'
+        tips = `删除后，用户无法登录当前系统。确定删除该用户？`
       }
-      this.$confirm('确定'+str+'该用户？').then(_ => {
+      this.$confirm(tips, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
         enableDisUser(row.userId, row.cancelFlag).then(res => {
           if (res.data.code==0) {
             this.$message.success(str + '用户成功')
@@ -896,17 +1091,6 @@ export default {
         }
       })
     },
-    // 获取部门列表
-    getDeptListHandle () {
-      getDeptList().then(res => {
-        if (res.data.code==0) {
-          this.deptList=res.data.data
-          let tp = res.data.data
-          this.deptListImport = [{id: 'ditto', name: '同上'}].concat(tp)
-          this.$forceUpdate()
-        }
-      })
-    },
     //上传文件，获取文件流
     handleFileChange(file) {
       this.uploadFile = file.raw
@@ -926,6 +1110,12 @@ export default {
     // 导入用户
     importView (res, file, fileList) {
       if(res.code == 0) {
+        this.$message.success('导入成功')
+        this.getList()
+        this.getTreeDept()
+        this.$refs.uploadBtn.clearFiles()
+        this.handleCloseImport()
+        return false
         let temp = []
         temp = res.data
         if(temp.length > 0) {
@@ -997,7 +1187,6 @@ export default {
             this.importLoading = false
           }
         }).catch(e => {
-          console.log(e)
           this.importLoading = false
         })
       }
@@ -1031,7 +1220,11 @@ export default {
     },
     // 下载模板
     downloadModel () {
-      this.$openUrl('/mgr/jvs-auth/usermanager/template/users', '_self')
+      this.$openUrl('/mgr/jvs-auth/user/template/excel/download', '_self')
+    },
+    // 同步用户
+    syncUser() {
+      console.log(0)
     },
     // 删除导入行
     delImportRow (row, index) {
@@ -1064,7 +1257,6 @@ export default {
     // 获取常量列表
     getConst () {
       this.getRoleListHandle()
-      this.getDeptListHandle()
       getPostList().then(res => {
         if(res.data.code == 0) {
           this.allPost = res.data.data
@@ -1085,12 +1277,102 @@ export default {
       this.selectOneId = ""
       this.$refs.deptTree.setCurrentKey(null)
       this.$forceUpdate()
+      this.queryParams = {}
       this.getList(this.page)
+    },
+    // 修改密码
+    editPassHandle (row) {
+      this.rowData = row
+      this.passVisible = true
+    },
+    // 提交密码
+    submitPassWord (form) {
+      let temp = encryption({
+        data: form,
+        key: enCodePasswordKey, // enCodePasswordKey,
+        param: ["password"]
+      });
+      temp = encryption({
+        data: temp,
+        key: enCodePasswordKey, // enCodePasswordKey,
+        param: ["rePassword"]
+      });
+      this.passOption.submitLoading = true
+      setUserPassWord(this.rowData.id, temp).then(res => {
+        if(res.data.code == 0) {
+          this.$message.success('修改密码成功')
+          this.passOption.submitLoading = false
+          this.passClose()
+        }
+      }).catch(e => {
+        this.passOption.submitLoading = false
+      })
+    },
+    // 关闭弹框
+    passClose () {
+      this.passForm = {}
+      this.passVisible = false
+    },
+    // 上传文件前钩子
+    beforeUpload(file) {
+      const xlsx = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      const xls = 'application/vnd.ms-excel'
+      const isPassType = (file.type !== xlsx && file.type !== xls)
+      const isLt10M = file.size / 1024 / 1024 < 10;
+      if (isPassType && !isLt10M) {
+        this.$message.error('上传文件的格式只能是 xls、xlsx格式，且文件大小不能超过 10MB！');
+      } else if (isPassType) {
+        this.$message.error('文件格式错误，仅支持上传xls、xlsx格式文件!');
+      } else if (!isLt10M) {
+        this.$message.error('上传的文件大小不能超过 10MB!');
+      }
+      return !isPassType && isLt10M;
+    },
+    // 导入数据 弹窗关闭
+    handleCloseImport() {
+      this.importUserDialogVisible = false
+      this.fileList = []
+    },
+    // 同步部门
+    sysDept (type) {
+      if(type == 'DINGTALK_INSIDE') {
+        this.sysddLoading = true
+      }else{
+        this.sysqwLoading = true
+      }
+      sysDepartment(type).then(res => {
+        if(res.data && res.data.code == 0) {
+          this.getTreeDept()
+          this.sysddLoading = false
+          this.sysqwLoading = false
+          this.getList()
+        }
+      }).catch(e => {
+        this.sysddLoading = false
+        this.sysqwLoading = false
+      })
+    },
+    // 获取同步按钮
+    getSyncBtns() {
+      getSyncBtns().then(res => {
+        if (res.data && res.data.code == 0) {
+          this.syncObj = JSON.parse(JSON.stringify(res.data.data))
+          Object.keys(res.data.data).forEach(item => {
+            this.syncBtns.push(item)
+          })
+        }
+      })
     }
   },
   created () {
-    this.formOption.column.filter(item => { item.span=24 })
+    this.formOption.column.filter(item => {
+      item.span=24;
+      if(item.prop == 'phone') {
+        item.rules.push({ validator: validateReMobile, trigger: 'blur' })
+      }
+    })
     this.getConst()
+    this.getSyncBtns()
   },
   // 生命周期 - 挂载完成（可以访问DOM元素）
   mounted () {
@@ -1123,22 +1405,23 @@ export default {
 
 .treeBox {
   position: absolute;
-  //top: 94px;
-  top: 72px;
+  //top: 132px;
+  top: 10px;
   left: 0;
   width: 250px;
-  //height: calc(100% - 94px);
-  height: calc(100% - 72px);
+  //height: calc(100% - 72px);
+  //height: calc(100% - 132px);
+  height: calc(100% - 30px);
   overflow: hidden;
   overflow-y: auto;
   padding-left: 20px;
-  border-right: 1px solid #DCDFE6;
-  padding-top: 20px;
+  //border-right: 1px solid #DCDFE6;
+  padding-top: 10px; // 20px;
   padding-bottom: 20px;
   box-sizing: border-box;
   .treeBox-title{
     font-size: 14px;
-    padding-left: 10px;
+    padding-left: 24px;
     display: block;
     background: #fff;
     height: 35px;
@@ -1165,9 +1448,11 @@ export default {
     display: flex;
     align-items: center;
     margin: 0;
-    margin-bottom: 10px;
+    //margin-bottom: 10px;
+    height: 32px;
+    line-height: 32px;
     cursor: pointer;
-    padding: 5px 10px;
+    padding: 6px 24px;
     i{
       margin-right: 10px;
       font-size: 14px!important;
@@ -1197,6 +1482,10 @@ export default {
   .treeBox::-webkit-scrollbar{
     display: none;
   }
+  .jvs-table-top{
+    width: calc(100% - 250px);
+    margin-left: 250px;
+  }
   .el-table{
     width: calc(100% - 250px);
     margin-left: 250px;
@@ -1207,6 +1496,15 @@ export default {
         display: block;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+    }
+  }
+  .jvs-table{
+    .jvs-table-titleTop{
+      .el-card__body{
+        .table-top{
+          //padding-bottom: 0;
+        }
       }
     }
   }
@@ -1234,6 +1532,32 @@ export default {
     .el-dialog__body{
       width: 100%;
       position: unset;
+    }
+  }
+}
+.import-data-box{
+  .import-data-upload{
+    text-align: center;
+    .el-upload-dragger{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f7f7f7;
+      width: 600px;
+    }
+  }
+  .upload-explain{
+    margin-top: 16px;
+    font-size: 12px;
+    ul{
+      padding: 0 16px;
+      margin: 8px 0;
+      li{
+        line-height: 20px;
+        span{
+          font-weight: bold;
+        }
+      }
     }
   }
 }

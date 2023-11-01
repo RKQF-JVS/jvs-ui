@@ -118,8 +118,8 @@ export default {
       },
       option: {
         page: true,
-        align: 'center',
-        menuAlign: 'center',
+        // align: 'center',
+        // menuAlign: 'center',
         viewBtn: false,
         addBtn: false,
         menu: false,

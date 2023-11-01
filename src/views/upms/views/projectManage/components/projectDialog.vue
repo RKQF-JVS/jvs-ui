@@ -13,6 +13,7 @@
           <div class="item-title">{{ item.name }}</div>
           <div class="item-description">{{ item.description }}</div>
           <el-tag size="small">{{ item.type }}</el-tag>
+          <span style="margin-left:10px;font-size:12px;">{{item.online ? '线上' : '本地'}}</span>
         </div>
       </div>
     </div>
@@ -101,19 +102,12 @@ export default {
       this.$emit('addByTemplate', obj)
     },
     getProjectList() {
-      let obj={
-        size: this.page.pageSize,
-        current: this.page.currentPage
-      }
-      if (this.queryParams.type === '全部') {
-        this.queryParams.type = undefined
-      }
-      templateList(Object.assign(obj, this.queryParams)).then(res => {
+      templateList().then(res => {
         if (res.data.code == 0) {
-          this.projectList = res.data.data.records
-          this.page.currentPage = res.data.data.current
-          this.page.total = res.data.data.total
-          this.isMore = res.data.data.records.length !== 0
+          this.projectList = [...res.data.data.localList, ...res.data.data.onlineList]
+          // this.page.currentPage = res.data.data.current
+          // this.page.total = res.data.data.total
+          this.isMore = this.projectList.length !== 0
         }
       })
     },
@@ -140,7 +134,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-::v-deep.project-page{
+/deep/.project-page{
   .form-item-btn{
     width: auto;
   }

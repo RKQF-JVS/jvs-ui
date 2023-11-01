@@ -16,6 +16,9 @@
       <template slot="menu" slot-scope="scope">
         <jvs-button size="mini" type="text" @click="addHandle(scope.row)">编辑</jvs-button>
       </template>
+      <template slot="createBy" slot-scope="scope">
+        <el-tag v-if="scope.row.createBy" size="mini">{{ scope.row.createBy }}</el-tag>
+      </template>
       <template slot="authority" slot-scope="scope">
         <!-- <span>{{getAuthorityString(scope.row)}}</span> -->
         <el-tag v-for="ritem in getAuthorityString(scope.row)" :key="ritem" style="margin-right:5px;">{{ritem}}</el-tag>
@@ -26,6 +29,7 @@
       width="75%"
       v-if="formVisible"
       :visible.sync="formVisible"
+      :close-on-click-modal="false"
       :before-close="handleClose">
       <jvs-form :option="option" :formData="addForm" @submit="addSubmit">
         <template slot="customForm">
@@ -94,8 +98,8 @@ export default {
         editBtn: false,
         menu: this.from == 'user' ? false : true,
         showOverflow: true,
-        align: 'center',
-        menuAlign: 'center',
+        // align: 'center',
+        // menuAlign: 'center',
         cancal: false,
         column: [
           {
@@ -114,6 +118,7 @@ export default {
             addDisplay: false,
             editDisplay: false,
             display: false,
+            slot: true,
             hide: this.from == 'user' ? true : false
           },
           {
@@ -192,8 +197,8 @@ export default {
       customOption: {
         addBtn: false,
         editBtn: false,
-        align: 'center',
-        menuAlign: 'center',
+        // align: 'center',
+        // menuAlign: 'center',
         column: [
           {
             label: '字段(表名.字段名)',

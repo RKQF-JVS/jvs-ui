@@ -1,3 +1,5 @@
+import moment from 'moment'
+moment.locale('zh-cn')
 export const calcDate = (date1, date2) => {
   var date3 = date2 - date1
 
@@ -49,3 +51,44 @@ export function dateFormat(date) {
   return '';
 
 }
+
+/**
+ * 格式化相对时间
+ * @returns {string}
+ * @param value
+ * @param now
+ */
+export const relativelyTime = (value, now) => {
+  if (!now) {
+    now = moment();
+  }
+  const diff = moment(now).diff(moment(value), 'hours');
+  if (diff <= 1) {
+    return moment(value).fromNow();
+  }
+  const today = moment(now).get('date');
+  const current = moment(value).get('date');
+  if (current < today - 1) {
+    // return moment(value).format('M月D日 H:mm');
+  }
+  let detailTime = moment(value).format('H:mm');
+  const currentDate = moment(value).format('YYYY-MM-DD');
+  const currentMonday = moment().weekday(0).format('YYYY-MM-DD');
+  const currentSunday = moment().weekday(6).format('YYYY-MM-DD');
+  let weekDate = '';
+  if (currentDate < currentMonday) {
+    weekDate = '[上周]dd ' + detailTime;
+  }else if (currentDate > currentSunday) {
+    weekDate = '[下周]dd ' + detailTime;
+  }else{
+    weekDate = '[周]dd ' + detailTime;
+  }
+  return moment(value).calendar(null, {
+    sameDay: '[今天 ]' + moment(value).format('H:mm'),
+    nextDay: '[明天 ]' + detailTime,
+    nextWeek: weekDate,
+    lastDay: '[昨天 ]' + detailTime,
+    lastWeek: weekDate,
+    sameElse: 'M月D日 H:mm'
+  });
+};

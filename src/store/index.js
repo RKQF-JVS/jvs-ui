@@ -4,9 +4,10 @@ import user from './modules/user'
 import common from './modules/common'
 import tags from './modules/tags'
 import getters from './getters'
-import flow from './modules/flow'
+import socket from './modules/socket'
 import iconLib from './modules/icon'
 import * as globalTypes from './types/global'
+import { setStore } from "@/util/store";
 
 Vue.use(Vuex)
 
@@ -42,7 +43,8 @@ const initState = {
     table: {
       size: 'small', // 表单内组件的尺寸  medium / small / mini
     }
-  }
+  },
+  labelValue: null
 }
 const actions = {};
 const mutations = {
@@ -52,6 +54,13 @@ const mutations = {
   [globalTypes.UPDATE_THEME](state, theme) {
     state.theme = theme;
   },
+  SET_LabelValue: (state, labelValue) => {
+    state.labelValue = labelValue;
+    setStore({
+      name: "labelValue",
+      content: state.labelValue
+    });
+  },
 }
 
 const store = new Vuex.Store({
@@ -59,7 +68,7 @@ const store = new Vuex.Store({
     user,
     common,
     tags,
-    flow,
+    socket,
     iconLib
   },
   getters,

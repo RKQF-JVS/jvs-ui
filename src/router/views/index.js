@@ -30,4 +30,14 @@ export default [{
         isTab: true,
         isAuth: false
     }
+},{
+    path: '/applicationSetting',
+    name: '应用设置',
+    component: () =>
+        import ( /* webpackChunkName: "page" */ '@/page/main/application/applicationSetting'),
+    meta: {
+        keepAlive: true,
+        isTab: false,
+        isAuth: false
+    }
 }]
