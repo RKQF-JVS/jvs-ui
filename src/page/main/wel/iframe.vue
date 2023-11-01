@@ -5,7 +5,7 @@
     </div>
     <div class="iframe-info-content">
       <iframe
-        :src="formatUrl(item)" class="iframe" ref="iframe"
+        :src="formatUrl(item)" class="iframe" ref="iframe" 
         style="width:100%;height: 100%;border: 0;"
         :data="item.data"
         :border="0"
@@ -65,6 +65,13 @@ export default {
         let index = str.indexOf("-ui")
         if(index > -1) {
           str = item.page.slice(0, index+3) + '/#' + item.page.slice(index+3)
+        }else{
+          if(['page'].indexOf(item.type) > -1) {
+            str = `/page-design-ui/#/show?id=${item.page}`
+          }
+          if(item.type == 'chart') {
+            str = `/chart-design-ui/#/show?model=view&type=pc&code=${item.page}`
+          }
         }
       }
       return str

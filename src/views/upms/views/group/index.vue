@@ -2,7 +2,7 @@
   <div class="group-manage-box">
     <div class="group-manage">
       <jvs-table
-        pageheadertitle='群组管理'
+        pageheadertitle='团队管理'
         :index="false"
         :page="page"
         :option="option"
@@ -10,7 +10,7 @@
         @on-load="getList"
       >
         <template slot="menuLeft">
-          <jvs-button type="primary" size="mini" @click="dialogVisibleShow('add', null, null, 'post')" permisionFlag="upms_group_add">添加群组</jvs-button>
+          <jvs-button type="primary" size="mini" @click="dialogVisibleShow('add', null, null, 'post')" permisionFlag="upms_group_add">添加团队</jvs-button>
         </template>
         <template slot="menu" slot-scope="scope">
           <jvs-button type="text" size="mini" permisionFlag="upms_group_remove" @click="delUSerGroup(scope.row)">移出</jvs-button>
@@ -18,11 +18,12 @@
         <template slot="roleName" slot-scope="scope">
           <el-tag v-for="ritem in scope.row.roleName" :key="ritem" style="margin-right:5px;">{{ritem}}</el-tag>
         </template>
-<!--        <template slot="jobId" slot-scope="scope">-->
-<!--          <span>{{getLabelOfPost(scope.row.jobId)}}</span>-->
-<!--        </template>-->
+       <!-- <template slot="jobId" slot-scope="scope">
+         <span>{{getLabelOfPost(scope.row.jobId)}}</span>
+       </template> -->
       </jvs-table>
       <div class="treeBox post-treeBox">
+        <div :class="{'treeBox-title': true, 'treeBox-title-check': !groupId}" @click="queryAllHandle">全部</div>
         <el-tree
           ref="groupTree"
           :data="postData"
@@ -92,7 +93,7 @@ export default {
   components: {dataPermision, userSelector},
   data () {
     return {
-      groupId: undefined, // 群组id
+      groupId: undefined, // 团队id
       queryParams: {},
       page: {
         total: 0, // 总页数
@@ -121,7 +122,7 @@ export default {
       lastPost: null,
       deptIds: [],
       groupIds: [],
-      postData: [], // 群组列表
+      postData: [], // 团队列表
       groupLoading: false,
       defaultGroupProps: {
         children: 'childList',
@@ -136,11 +137,22 @@ export default {
         formAlign: 'top',
         column: [
           {
-            label: '群组名称',
+            label: '团队名称',
             prop: 'name',
             rules: [
               { required: true, message: '名称不能为空' }
             ]
+          },
+          {
+            label: '团队负责人',
+            prop: 'principal',
+            type: 'user',
+            multiple: false,
+            allowinput: false,
+            props: {
+              label: 'principalName',
+              value: 'principalId'
+            }
           }
         ]
       },
@@ -156,8 +168,10 @@ export default {
     getList (page) {
       let obj={
         size: this.page.pageSize,
-        current: this.page.currentPage,
-        groupId: this.groupId
+        current: this.page.currentPage
+      }
+      if(this.groupId) {
+        obj.groupId = this.groupId
       }
       getUserByGroupId(obj).then(res => {
         if (res.data.code==0) {
@@ -167,7 +181,7 @@ export default {
         }
       })
     },
-    // 群组更多
+    // 团队更多
     morePost (item) {
       if(this.lastPost) {
         this.lastPost.moretool = false
@@ -183,7 +197,7 @@ export default {
         }
       })
     },
-    // 群组选中
+    // 团队选中
     groupHandleClick (data, node, dom) {
       this.selectOneData = data
       if(this.groupId == data.id) {
@@ -207,9 +221,9 @@ export default {
       }
       this.postForm = {}
       if (method == 'add') {
-        this.title = "添加群组"
+        this.title = "添加团队"
       }else{
-        this.title = '修改群组'
+        this.title = '修改团队'
         let obj = JSON.parse(JSON.stringify(data))
         if(obj.customScope) {
           if(obj.customScope.startsWith('{')) {
@@ -218,12 +232,15 @@ export default {
             this.groupIds = temp.jobIds
           }
         }
+        if(obj.principalId) {
+          obj.principal = obj.principalId
+        }
         this.postForm = obj
       }
       this.dialogVisible = true
     },
     remove (data) {
-      this.$confirm('将删除此群组, 是否继续?', '提示', {
+      this.$confirm('将删除此团队, 是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
@@ -232,7 +249,7 @@ export default {
           if(res.data.code == 0) {
             this.$message.success({
               showClose: true,
-              message: '删除群组成功',
+              message: '删除团队成功',
             })
             this.getGroupTree()
           }
@@ -247,16 +264,15 @@ export default {
       this.customizeList = []
       this.groupIds = []
     },
-    // 提交 群组
+    // 提交 团队
     groupSubmitHandle (form) {
       let obj = JSON.parse(JSON.stringify(form))
-      // let custObj = {deptIds: this.deptIds, jobIds: this.groupIds}
-      // obj.customScope = JSON.stringify(custObj)
+      delete obj.principal
       this.groupFormOption.submitLoading = true
       if(this.method == 'add') {
         addGroup(obj).then(res => {
           if(res.data.code == 0) {
-            this.$message.success('添加群组成功')
+            this.$message.success('添加团队成功')
             this.groupFormOption.submitLoading = false
             this.handleClose()
             this.getGroupTree()
@@ -268,7 +284,7 @@ export default {
       if(this.method == 'edit') {
         editGroup(obj).then(res => {
           if(res.data.code == 0) {
-            this.$message.success('修改群组成功')
+            this.$message.success('修改团队成功')
             this.groupFormOption.submitLoading = false
             this.handleClose()
             this.getGroupTree()
@@ -279,7 +295,7 @@ export default {
       }
     },
     delUSerGroup (row) {
-      this.$confirm('将移出该用户群组, 是否继续?', '提示', {
+      this.$confirm('将移出该用户团队, 是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
@@ -313,6 +329,12 @@ export default {
           this.getList()
         }
       })
+    },
+    queryAllHandle () {
+      this.groupId = ""
+      this.$refs.groupTree.setCurrentKey(null)
+      this.$forceUpdate()
+      this.getList()
     }
   }
 }
@@ -360,12 +382,12 @@ export default {
   }
   .treeBox {
     position: absolute;
-    //top: 134px;
-    top: 94px;
+    //top: 94px;
+    top: 72px;
     left: 0;
     width: 250px;
-    //height: calc(100% - 134px);
-    height: calc(100% - 94px);
+    //height: calc(100% - 94px);
+    height: calc(100% - 72px);
     overflow: hidden;
     overflow-y: auto;
     padding-left: 20px;
@@ -373,6 +395,21 @@ export default {
     padding-top: 20px;
     padding-bottom: 20px;
     box-sizing: border-box;
+    .treeBox-title{
+      font-size: 14px;
+      padding-left: 24px;
+      display: block;
+      background: #fff;
+      height: 35px;
+      line-height: 35px;
+      cursor: pointer;
+    }
+    .treeBox-title:hover{
+      background: #EFF2F7;
+    }
+    .treeBox-title-check{
+      background: #F5F7FA;
+    }
     .customize-tree-node {
       flex: 1;
       display: flex;
@@ -396,7 +433,7 @@ export default {
       }
     }
     .el-tree{
-      min-height: calc(100% - 19px);
+      min-height: calc(100% - 35px);
     }
     .el-tree-node{
       .el-tree-node__content{

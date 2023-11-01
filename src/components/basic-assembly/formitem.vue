@@ -1,5 +1,5 @@
 <template>
-  <div class="jvs-form-item" style="display:flex;align-items:center;">
+  <div :class="{'jvs-form-item': true, 'jvs-form-item-disabled': item.disabled}" style="display:flex;align-items:center;">
     <el-input
       v-model="forms[item.prop]"
       v-if='item.type==="input" || !item.type'
@@ -319,18 +319,19 @@
     <!-- 上传图片 -->
     <el-upload
       v-if='(item.type === "imageUpload")'
-      :class="item.fileList.length < (item.limit ? item.limit : 5) ? 'form-list-upload-img' : 'form-list-upload-img-none'"
+      :class="((item.parent && item.parent.type == 'tableForm') ? (tableFileList[tableRowAIndex] && tableFileList[tableRowAIndex].length || 0) : item.fileList.length) < (item.limit ? item.limit : 5) ? 'form-list-upload-img' : 'form-list-upload-img-none'"
       :ref="'uploadImageBtn'+'_'+item.prop"
       :action="item.action || (item.uploadHttp && item.uploadHttp.url) || ''"
       :multiple="item.multipleUpload"
       :limit="item.limit || 5"
       :headers="item.headers || {}"
-      :file-list="item.fileList || []"
+      :file-list="(item.parent && item.parent.type == 'tableForm') ? tableFileList[tableRowAIndex] : item.fileList"
       :size="$store.state.params.form.size || item.size || 'mini'"
       list-type="picture-card"
       :data="formatUploadData(item)"
       accept=".jpg,.jpeg,.png,.gif,.bmp,.JPG,.JPEG,.PBG,.GIF,.BMP"
       :auto-upload="true"
+      :disabled="item.disabled"
       :on-success="handleSuccess"
       :on-error="item.handleError"
       :on-preview="handlePictureCardPreviewUpload"
@@ -355,21 +356,23 @@
     <!-- 上传文件 -->
     <el-upload
       v-if='item.type === "fileUpload"'
-      :class="item.fileList.length < (item.limit ? item.limit : 5) ? 'form-list-upload-file' : 'form-list-upload-file-none'"
+      :class="((item.parent && item.parent.type == 'tableForm') ? (tableFileList[tableRowAIndex] && tableFileList[tableRowAIndex].length || 0) : item.fileList.length) < (item.limit ? item.limit : 5) ? 'form-list-upload-file' : 'form-list-upload-file-none'"
       :ref="'uploadFileBtn'+'_'+item.prop"
       :action="item.action || (item.uploadHttp && item.uploadHttp.url) || ''"
       :multiple="item.multipleUpload"
       :limit="item.limit"
       :headers="item.headers"
-      :file-list="item.fileList"
+      :file-list="(item.parent && item.parent.type == 'tableForm') ? tableFileList[tableRowAIndex] : item.fileList"
       :size="$store.state.params.form.size || item.size || 'mini'"
       :data="formatUploadData(item)"
       :auto-upload="true"
+      :disabled="item.disabled"
       :on-success="handleSuccess"
       :on-error="item.handleError"
       :on-remove="handleRemove"
       :on-change="uploadChangeHandle"
       :before-upload="beforeUpload"
+      :on-preview="handleFilePreviewUpload"
     >
       <el-button slot="trigger" size="mini" type="primary">选取文件</el-button>
       <div v-if="fileValidate" slot="tip" class="el-upload__tip" style="color: #F56C6C;font-size: 12px;">文件大小不超过20M</div>
@@ -518,6 +521,8 @@
       :defaultValue="item.defaultValue"
       :enableinput="item.allowinput"
       :disabled="item.disabled"
+      :deptable="item.deptable"
+      :props="item.props"
       :resetRadom="resetRadom"
       @change="formChange" /> <!-- @formChange="tabFormchange" -->
     <!-- 部门组件 -->
@@ -631,6 +636,19 @@
       @change="formChange"
     >
     </el-cascader>
+
+    <!-- 数据源 -->
+    <datasourceForm
+      style="flex:1;"
+      v-if="item.type==='datasource'"
+      :item="item"
+      :form="forms"
+      :prop="item.prop"
+      :selectable="item.multiple"
+      :disabled="item.disabled"
+      :resetRadom="resetRadom"
+      @change="formChange" />
+
     <!-- 步骤条 -->
     <stepBar
       :formRef="formRef"
@@ -707,6 +725,7 @@ import userForm from './userForm'
 import iconList from '@/const/iconfont'
 import entryIcon from '@/const/entryIcon'
 import tableForm from '@/components/basic-assembly/tableForm'
+import datasourceForm from './datasourceForm'
 import systemIcon from '@/const/systemIcon'
 import stepBar from './stepBar'
 import formCard from './formcard'
@@ -722,6 +741,7 @@ export default {
   components: {
     userForm,
     tableForm,
+    datasourceForm,
     stepBar,
     formCard,
     reportTable
@@ -792,6 +812,9 @@ export default {
       type: Object
     },
     resetRadom: {
+      type: Number
+    },
+    tableRowAIndex: {
       type: Number
     }
   },
@@ -871,6 +894,7 @@ export default {
       'radio', 'checkbox', 'imageUpload', 'fileUpload', 'htmlEditor', 'cascader', 'datasource', 'chinaArea', 'department', 'role', 'user', 'post'],
       initHtml: '', // 记录富文本初始值
       iconToolWidth: 400, // 图标组件工具栏宽
+      tableFileList: [ [] ]
     };
   },
   methods: {
@@ -1019,9 +1043,7 @@ export default {
         if(!this.item.headers) {
           this.$set(this.item, 'headers', {})
         }
-        if(!this.item.headers.Authorization) {
-          this.$set(this.item.headers, 'Authorization', ('Bearer ' + this.$store.getters.access_token))
-        }
+        this.$set(this.item.headers, 'Authorization', ('Bearer ' + this.$store.getters.access_token))
       }
       if(this.item.type == 'timeline' && !this.forms[this.item.prop]) {
         this.$set(this.forms, this.item.prop, [])
@@ -1035,6 +1057,9 @@ export default {
     handlePictureCardPreviewUpload (file) {
       this.dialogImageUrl=file.url
       this.dialogVisible=true
+    },
+    handleFilePreviewUpload (file) {
+      this.$openUrl(file.url, '_blank')
     },
     checkIcon (key, icon) {
       this.form[key] = icon
@@ -1232,13 +1257,21 @@ export default {
           url: res.data.fileLink,
           fileName: res.data.fileName
         }
-        this.item.fileList.push(obj)
-        let temp = {
-          key: this.item.prop,
-          fileList: this.item.fileList
+        if(this.item.parent && this.item.parent.type == 'tableForm') {
+          if(!this.tableFileList[this.tableRowAIndex]) {
+            this.tableFileList[this.tableRowAIndex] = []
+          }
+          this.tableFileList[this.tableRowAIndex].push(obj)
+          this.$set(this.forms, this.item.prop, this.tableFileList[this.tableRowAIndex])
+        }else{
+          this.item.fileList.push(obj)
+          let temp = {
+            key: this.item.prop,
+            fileList: this.item.fileList
+          }
+          this.$emit('file', temp)
+          this.$set(this.forms, this.item.prop, this.item.fileList)
         }
-        this.$emit('file', temp)
-        this.$set(this.forms, this.item.prop, this.item.fileList)
         this.eventRequireHandle()
       }
     },
@@ -1275,15 +1308,25 @@ export default {
     },
     // 删除
     handleRemove (file, fileList) {
-      for(let i in this.item.fileList) {
-        if(this.item.fileList[i].uid == file.uid) {
-          this.item.fileList.splice(i, 1)
-          let temp = {
-            key: this.item.prop,
-            fileList: this.item.fileList
+      if(this.item.parent && this.item.parent.type == 'tableForm') {
+        for(let i in this.tableFileList[this.tableRowAIndex]) {
+          if(this.tableFileList[this.tableRowAIndex][i].uid == file.uid) {
+            this.tableFileList[this.tableRowAIndex].splice(i, 1)
+            this.$set(this.forms, this.item.prop, this.tableFileList[this.tableRowAIndex])
           }
-          this.$emit('file', temp)
-          this.$set(this.forms, this.item.prop, this.item.fileList)
+        }
+        this.$forceUpdate()
+      }else{
+        for(let i in this.item.fileList) {
+          if(this.item.fileList[i].uid == file.uid) {
+            this.item.fileList.splice(i, 1)
+            let temp = {
+              key: this.item.prop,
+              fileList: this.item.fileList
+            }
+            this.$emit('file', temp)
+            this.$set(this.forms, this.item.prop, this.item.fileList)
+          }
         }
       }
     }
@@ -1307,10 +1350,6 @@ export default {
               this.$set(this.forms, this.item.prop, "")
             }
           }
-        }
-        if(this.item.type == 'htmlEditor') {
-          $('#' + this.item.prop + '-editor').html("")
-          this.initEditor(this.item.prop)
         }
         if(['imageUpload', 'fileUpload'].indexOf(this.item.type) > -1) {
           if(this.item.rules && this.item.rules.length > 0) {
@@ -1463,6 +1502,20 @@ export default {
       width: auto;
       .el-input__inner{
         padding-right: 0;
+      }
+    }
+  }
+}
+.jvs-form-item-disabled{
+  .el-upload-list{
+    .el-upload-list__item{
+      .el-upload-list__item-status-label{
+        display: none!important;;
+      }
+    }
+    .el-upload-list__item:hover{
+      .el-icon-close{
+        display: none!important;
       }
     }
   }

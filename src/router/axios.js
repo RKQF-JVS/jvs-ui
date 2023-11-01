@@ -38,6 +38,8 @@ axios.interceptors.request.use(
             //     config.headers["tenantId"] = tenantId;
             // }
         }
+        // 添加请求头 固定参数
+        // config.headers["jvs-rule-ua"] = encodeURI('肖辉') // encodeURI('郭静')
         // headers中配置serialize为true开启序列化
         if (config.methods === "post" && config.headers.serialize) {
             config.data = serialize(config.data);

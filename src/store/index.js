@@ -4,6 +4,7 @@ import user from './modules/user'
 import common from './modules/common'
 import tags from './modules/tags'
 import getters from './getters'
+import flow from './modules/flow'
 import iconLib from './modules/icon'
 import * as globalTypes from './types/global'
 
@@ -58,6 +59,7 @@ const store = new Vuex.Store({
     user,
     common,
     tags,
+    flow,
     iconLib
   },
   getters,

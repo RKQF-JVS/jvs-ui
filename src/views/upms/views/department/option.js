@@ -1,4 +1,5 @@
 import Vue from "vue"
+import store from "@/store";
 export const tableOption = {
     page: true,
     align: 'center',
@@ -25,7 +26,7 @@ export const tableOption = {
         slot: true
       },
       {
-        label: '用户名',
+        label: '账号',
         prop: 'accountName',
         span: 6,
         formSlot: true,
@@ -33,7 +34,7 @@ export const tableOption = {
           { required: true, message: '请输入用户名', trigger: 'blur' }
         ],
         display: false,
-        hide: true
+        hide: store.getters.userInfo.adminFlag ? false : true
       },
       {
         label: '姓名',

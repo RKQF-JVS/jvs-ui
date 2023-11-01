@@ -20,7 +20,7 @@
       >
         <template slot="menuLeft">
           <jvs-button type="primary" size="mini" @click="dialogVisibleShow('add', null, null, 'dept')" permisionFlag="upms_dept_add">添加部门</jvs-button>
-<!--          <jvs-button type="primary" size="mini" @click="invitationHandle" permisionFlag="upms_dept_invite">邀请成员</jvs-button>-->
+          <!-- <jvs-button type="primary" size="mini" @click="invitationHandle" permisionFlag="upms_dept_invite">邀请成员</jvs-button>-->
           <el-upload
             v-if="false && $permissionMatch('')"
             ref="uploadBtn"
@@ -55,6 +55,7 @@
         </template>
       </jvs-table>
       <div class="treeBox dept-treeBox">
+        <div :class="{'treeBox-title': true, 'treeBox-title-check': !selectOneId}" @click="queryAllHandle">全部</div>
         <el-tree
           ref="deptTree"
           :data="treedata"
@@ -1079,6 +1080,12 @@ export default {
     // 邀请成员
     invitationHandle () {
       this.$refs.invitation.openDialog()
+    },
+    queryAllHandle () {
+      this.selectOneId = ""
+      this.$refs.deptTree.setCurrentKey(null)
+      this.$forceUpdate()
+      this.getList(this.page)
     }
   },
   created () {
@@ -1116,12 +1123,12 @@ export default {
 
 .treeBox {
   position: absolute;
-  //top: 134px;
-  top: 94px;
+  //top: 94px;
+  top: 72px;
   left: 0;
   width: 250px;
-  //height: calc(100% - 134px);
-  height: calc(100% - 94px);
+  //height: calc(100% - 94px);
+  height: calc(100% - 72px);
   overflow: hidden;
   overflow-y: auto;
   padding-left: 20px;
@@ -1134,6 +1141,15 @@ export default {
     padding-left: 10px;
     display: block;
     background: #fff;
+    height: 35px;
+    line-height: 35px;
+    cursor: pointer;
+  }
+  .treeBox-title:hover{
+    background: #EFF2F7;
+  }
+  .treeBox-title-check{
+    background: #F5F7FA;
   }
 }
 .treeBox::-webkit-scrollbar{
@@ -1170,7 +1186,7 @@ export default {
   position: relative;
   .treeBox{
     .el-tree{
-      min-height: calc(100% - 19px);
+      min-height: calc(100% - 54px);
     }
     .el-tree-node.is-current{
       >.el-tree-node__content{

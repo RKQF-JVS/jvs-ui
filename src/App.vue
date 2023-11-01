@@ -321,6 +321,9 @@
       },
       fresh () {
         location.reload()
+      },
+      goBack () {
+        history.pushState(null, null, document.URL)
       }
     },
     computed: {
@@ -334,6 +337,13 @@
           this.fresh()
         }
       })
+      if(window.history && window.history.pushState) {
+        history.pushState(null, null, document.URL)
+        window.addEventListener('popstate', this.goBack, false)
+      }
+    },
+    destroyed () {
+      window.removeEventListener('popstate', this.goBack, false)
     }
   }
 </script>

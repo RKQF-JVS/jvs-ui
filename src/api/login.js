@@ -198,3 +198,27 @@ export function getBulletin(appKey) {
     method: "get"
   });
 }
+
+// 获取可登录的方式
+export function getCanLogin() {
+  return request({
+    url: `/auth/just`,
+    method: "get"
+  });
+}
+
+// 公众号登录二维码
+export const getOffLoginQcode = (uuid) => {
+  return request({
+    url: `/auth/wx/qr/code/login/${uuid}`,
+    method: "get"
+  });
+}
+
+// 定时检查二维码状态
+export const checkQrcodeState = (uuid) =>{
+  return request({
+    url: `/auth/wx/qr/code/check/${uuid}`,
+    method: "get"
+  });
+}

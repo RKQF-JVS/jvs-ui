@@ -41,8 +41,7 @@
     },
     created() {
       if(this.$store.state.common.tenantInfo && this.$store.state.common.tenantInfo.defaultIndexUrl) {
-        // this.url = this.$store.state.common.tenantInfo.defaultIndexUrl
-        this.url = ''
+        this.url = this.$store.state.common.tenantInfo.defaultIndexUrl
       }
       // 监听子页面传值
       let _this = this

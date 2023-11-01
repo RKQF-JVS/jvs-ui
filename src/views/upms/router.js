@@ -319,6 +319,17 @@ export default [
 		}
 	},
 	{
+		path: '/project',
+		name: '项目管理',
+		component: () =>
+            import ( /* webpackChunkName: "page" */ './views/projectManage/index'),
+		meta: {
+			keepAlive: true,
+			isTab: false,
+			isAuth: false
+		}
+	},
+	{
 		path: '/bulletin',
 		name: '公告管理',
 		component: () =>

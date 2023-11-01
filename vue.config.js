@@ -3,11 +3,9 @@
  * https://cli.vuejs.org/zh/config/#%E7%9B%AE%E6%A0%87%E6%B5%8F%E8%A7%88%E5%99%A8
  *
  */
-// const url = "http://www.demo.jvs.bctools.cn" // "http://10.1.0.48:10000"
-const url = "http://www.bctools.cn" // "http://10.1.0.48:10000"
+const url = "http://localhost:10000" // "http://10.1.0.48:10000"
 // 基础路径，发布前修改这里,当前配置打包出来的资源都是相对路径
-// const wsUrl = "http://www.demo.jvs..bctools.cn" // "http://10.1.0.48:10000"
-const wsUrl = "http://www.bctools.cn" //
+const wsUrl = "http://localhost:10000" // "http://10.1.0.48:10000"
 let path = "jvs-ui";
 
 module.exports = {
@@ -17,8 +15,6 @@ module.exports = {
     assetsDir: path + "/static",
     //静太资源文件
     indexPath: path + "/index.html",
-    //打包文件路径
-    outputDir: 'docker/dist',
 
     lintOnSave: true,
     productionSourceMap: false,
@@ -33,7 +29,7 @@ module.exports = {
     },
     // 配置转发代理
     devServer: {
-        port: 9999,
+        port: 8088,
         disableHostCheck: true,
         proxy: {
             "^/auth": {

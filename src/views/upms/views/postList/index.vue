@@ -23,6 +23,7 @@
         </template>
       </jvs-table>
       <div class="treeBox post-treeBox">
+        <div :class="{'treeBox-title': true, 'treeBox-title-check': !postId}" @click="queryAllHandle">全部</div>
         <el-tree
           ref="postTree"
           :data="postData"
@@ -451,6 +452,12 @@ export default {
           this.getList()
         }
       })
+    },
+    queryAllHandle () {
+      this.postId = ""
+      this.$refs.postTree.setCurrentKey(null)
+      this.$forceUpdate()
+      this.getList()
     }
   }
 }
@@ -498,12 +505,12 @@ export default {
   }
   .treeBox {
     position: absolute;
-    //top: 134px;
-    top: 94px;
+    //top: 94px;
+    top: 72px;
     left: 0;
     width: 250px;
-    //height: calc(100% - 134px);
-    height: calc(100% - 94px);
+    //height: calc(100% - 94px);
+    height: calc(100% - 72px);
     overflow: hidden;
     overflow-y: auto;
     padding-left: 20px;
@@ -511,6 +518,21 @@ export default {
     padding-top: 20px;
     padding-bottom: 20px;
     box-sizing: border-box;
+    .treeBox-title{
+      font-size: 14px;
+      padding-left: 24px;
+      display: block;
+      background: #fff;
+      height: 35px;
+      line-height: 35px;
+      cursor: pointer;
+    }
+    .treeBox-title:hover{
+      background: #EFF2F7;
+    }
+    .treeBox-title-check{
+      background: #F5F7FA;
+    }
     .customize-tree-node {
       flex: 1;
       display: flex;
@@ -534,7 +556,7 @@ export default {
       }
     }
     .el-tree{
-      min-height: calc(100% - 19px);
+      min-height: calc(100% - 35px);
     }
     .el-tree-node{
       .el-tree-node__content{

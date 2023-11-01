@@ -33,7 +33,7 @@
           <el-menu-item
             v-for="(it, itindex) in item.children"
             :key="'navmenu'+itindex"
-            :index="it.extend[pathKey]"
+            :index="it.extend[pathKey] ? it.extend[pathKey] : it.id"
             @click="open(it.extend)"
             :class="{'menu-item-li':true,'is-active-item':vaildAvtive(it.extend)}"
           >
@@ -43,6 +43,22 @@
               </svg>
               <i v-else :class="it.extend[iconKey]"></i>
               <span slot="title" :alt="it.extend[pathKey]">{{it.extend[labelKey]}}</span>
+            </div>
+            <div v-if="it.extend.designRole" class="more">
+              <el-popover
+                placement="right"
+                size="mini"
+                trigger="hover">
+                <div class="more-box">
+                  <div class="more-item" @click="handleDesign(it)">
+                    <i class="el-icon-edit-outline" style="margin-right: 16px;"></i>
+                    <span>设计</span>
+                  </div>
+                </div>
+                <div slot="reference">
+                  <i class="el-icon-more" style="color: #333333"/>
+                </div>
+              </el-popover>
             </div>
           </el-menu-item>
         </template>
@@ -114,11 +130,45 @@ export default {
     }
   },
   methods: {
+    handleDesign(obj) {
+      let str = ''
+      if (obj.extend && obj.extend.design) {
+        switch (obj.extend.design) {
+          case 'crud':
+            str = location.origin + ('/page-design-ui/#/crud/design?id='+obj.extend.id + (obj.extend.dataModelId ? `&dataModelId=${obj.extend.dataModelId}` : ''))
+            this.$openUrl(str, '_blank')
+            break
+          case 'form':
+            str = location.origin + ('/page-design-ui/#/form?id='+obj.extend.id + (obj.extend.dataModelId ? `&dataModelId=${obj.extend.dataModelId}` : ''))
+            this.$openUrl(str, '_blank')
+            break
+          case 'chart':
+            str = location.origin + ('/chart-design-ui/#/chartDesign?id='+obj.extend.id)
+            this.$openUrl(str, '_blank')
+            break
+        }
+      }
+    },
     vaildAvtive (item) {
       const groupFlag=(item["group"]||[]).some(ele =>
         this.$route.path.includes(ele)
       );
-      return this.nowTagValue===item[this.pathKey]||groupFlag;
+      if(item[this.pathKey]||groupFlag) {
+        return this.nowTagValue===item[this.pathKey]||groupFlag;
+      }else{
+        if(this.nowTagValue.includes('?')) {
+          let tp = this.nowTagValue.split('?')[1]
+          let tarr = tp.split('&')
+          let boolTemp = true
+          for(let i in tarr) {
+            let oba = tarr[i].split('=')
+            if(item[oba[0]] != oba[1] && JSON.stringify(item[oba[0]]) != oba[1]) {
+              boolTemp = false
+            }
+          }
+          return boolTemp
+        }
+      }
     },
     isSvg(item) {
       if (item) {
@@ -134,6 +184,18 @@ export default {
     },
     open (item) {
       if (item.design) {
+        let url = ''
+        switch (item.design) {
+          case 'chart':
+            url = `/chart-design-ui/chartShow?type=pc&id=${item.id}`;
+            break
+          case 'crud':
+            url = `/page-design-ui/show?id=${item.id}&dataModelId=${item.dataModelId}&isDeploy=${item.isDeploy}`;
+            break
+          case 'form':
+            url = `/page-design-ui/form/info?id=${item.id}&dataModelId=${item.dataModelId}&isDeploy=${item.isDeploy}`;
+            break
+        }
         this.$router.push({
           path: this.$router.$jvsRouter.getPath({
             name: item.name,
@@ -227,6 +289,14 @@ export default {
   align-items: center;
   justify-content: space-between;
   position: relative;
+  .more{
+    display: none;
+    margin-right: 16px;
+  }
+  .el-tooltip{
+    display: flex!important;
+    align-items: center;
+  }
   .dragicon{
     cursor: move;
     position: absolute;
@@ -235,6 +305,9 @@ export default {
   }
 }
 .menu-item-li:hover .dragicon{
+  display: block;
+}
+.menu-item-li:hover .more{
   display: block;
 }
 .menu-item-li::before{
