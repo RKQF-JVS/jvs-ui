@@ -33,18 +33,22 @@ export default {
         page: true,
         search: true,
         showOverflow: true,
+        hideTop: true,
         column: [
           {
             label: "账号",
             prop: "accountName",
+            search: true
           },
           {
             label: "姓名",
             prop: "realName",
+            search: true
           },
           {
             label: "登录类型",
-            prop: "loginType"
+            prop: "loginType",
+            search: true
           },
           {
             label: "IP",

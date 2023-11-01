@@ -21,10 +21,10 @@
         <div v-else class="login">
           <div class="login-top">
             <h5>{{formType == 'login' ? '欢迎登录' : '注册账号'}}</h5>
-            <div class="top-right" v-if="formType == 'login'">
+            <div class="top-right" v-if="formType == 'login' && (hasLoginRight('password') || hasLoginRight('phone')) && (hasLoginRight('wx') || hasLoginRight('wxmp'))">
               <p class="code"></p>
               <i class="icon-erweima" v-if="loginType != 'weixin'" @click="changeType('weixin')"></i>
-              <i class="el-icon-user-solid" v-if="loginType == 'weixin'" @click="changeType('namepass')"></i>
+              <i class="el-icon-user-solid" v-if="loginType == 'weixin'" @click="changeType(hasLoginRight('password') ? 'namepass' : 'phone')"></i>
             </div>
           </div>
           <div class="login-center" v-if="!fresh">
@@ -183,15 +183,17 @@
 
 
               <!-- 微信二维码登录 -->
-              <div v-if="loginType == 'weixin'" @click="freshWeixin" style="width: 300px;height: 330px;position: absolute;left: 50%;margin-left: -150px;cursor:pointer;z-index: 9;">
+              <div v-if="loginType == 'weixin' && wxType =='wx'" @click="freshWeixin" style="width: 300px;height: 330px;position: absolute;left: 50%;margin-left: -150px;cursor:pointer;z-index: 9;">
               </div>
-              <iframe id="weixinCode" v-if="loginType == 'weixin'" :src="'/auth/just/login/WECHAT_OPEN?url='+ callbackUrl" style="position: absolute;left: 50%;margin-left: -150px;cursor:pointer;" scrolling="no"  frameborder="0" height="330"></iframe>
-              <!-- <qr-code
-                v-if="loginType === 'weixin' || loginType === 'app'"
-                ref="QRCode"
-                :ReqType="'login'"
-                @submit='loginWX'
-              ></qr-code> -->
+              <iframe id="weixinCode" v-if="loginType == 'weixin' && wxType =='wx'" :src="'/auth/just/login/WECHAT_OPEN?url='+ callbackUrl" style="position: absolute;left: 50%;margin-left: -150px;cursor:pointer;" scrolling="no"  frameborder="0" height="330"></iframe>
+              <div v-loading="QRLoading"
+                element-loading-text="正在登录..." style="position: absolute;left: 50%;margin-left: -165px;width: 330px;min-height: auto;display: flex;align-items: center;justify-content: center;flex-direction: column;">
+                <div v-if="loginType == 'weixin' && OfficQrcodeUrl && wxType=='wxmp'" style="font-size:22px;">微信扫一扫登录</div>
+                <img id="weixinCode"  @click="freshWeixin"
+                 :src="OfficQrcodeUrl" v-if="loginType == 'weixin'  && OfficQrcodeUrl"  scrolling="no"  frameborder="0" height="330" width="330" style="cursor:pointer;"/>
+                <div v-if="loginType == 'weixin' && OfficQrcodeUrl" style="font-size: 14px;margin-top: 5px;">扫码关注公众号完成登录</div>
+                <div class="expires-box" v-if="isExpires" @click="freshWeixin">二维码已失效,点击刷新</div>
+              </div>
               <!-- 按钮 -->
               <el-form-item>
                 <el-button
@@ -228,7 +230,7 @@
                 </p>
                 <p v-else></p>
                 <p>
-                  <span v-if="formType == 'login'">没有账号？<jvs-button type="text" @click="changeFormType('register', 'register')">点击注册</jvs-button></span>
+                  <span v-if="formType == 'login' && hasLoginRight('phone')">没有账号？<jvs-button type="text" @click="changeFormType('register', 'register')">点击注册</jvs-button></span>
                 </p>
               </el-row>
               <el-row class="note-text" v-if="formType == 'register'">
@@ -239,7 +241,7 @@
                   <span><jvs-button type="text" @click="changeFormType('namepass', 'login')">去登录</jvs-button></span>
                 </p>
               </el-row>
-              <el-row v-if="loginType != 'weixin' && formType == 'login'" class="other-type-item">
+              <el-row v-if="loginType != 'weixin' && formType == 'login' && (hasLoginRight('wx')||hasLoginRight('wxmp'))" class="other-type-item">
                 <el-divider content-position="center">其他登录方式</el-divider>
                 <p>
                   <img :src="wxImgIcon" alt="" @click="changeType('weixin')">
@@ -256,8 +258,9 @@
 <script>
 import wxImg from './icon/wx.png'
 import QRcode from "../../QRcode/index"
-import { randomLenNum } from "@/util/util";
-import { getPhone, getRegPhoneCode } from "@/api/login"
+import { randomLenNum,encryption } from "@/util/util";
+import { getPhone, getRegPhoneCode, getCanLogin,getOffLoginQcode,checkQrcodeState,codeLogin } from "@/api/login"
+import {enCodeKey} from "@/const/const"
 export default {
   components: { 'qr-code': QRcode},
   computed: {
@@ -363,20 +366,111 @@ export default {
       tenantVisible: false, // 租户列表展示
       tenantLoading: false,
       randomString: '',
-      callbackUrl: ''
+      callbackUrl: '',
+      // 公众号二维码地址
+      wxType:'',
+      isExpires:false, //二维码是否过期
+      OfficQrcodeUrl:'',
+      QRcodeUUId:'',
+      QRCheckSetInterval:null,
+      QRChcekSetTimeout:null,
+      QRLoading:false
     }
   },
   methods: {
     init () {
-      this.loginVisible = true
-      if(this.switchTenant) {
-        this.tenantVisible = true
-        this.usertenantList = this.switchList
-      }else{
-        this.$store.dispatch("LogOut")
+      getCanLogin().then(res => {
+        if(res.data && res.data.code == 0) {
+          this.loginTypes = res.data.data
+          if(this.loginTypes.indexOf('password') > -1) {
+            this.loginType = 'namepass'
+          }else{
+            this.loginType = 'phone'
+          }
+          // 個人
+          if(this.loginTypes.indexOf('wx') > -1) {
+            this.loginType = 'weixin'
+            this.wxType = 'wx'
+          }
+          this.loginVisible = true
+          if(this.switchTenant) {
+            this.tenantVisible = true
+            this.usertenantList = this.switchList
+          }else{
+            this.$store.dispatch("LogOut")
+          }
+          // 企業
+          if(this.loginTypes.indexOf('wxmp')>-1){
+            this.loginType = 'weixin'
+            this.wxType = 'wxmp'
+            this.QRLoading = false
+            this.getOffLoginQcode()
+          }
+        }
+      })
+    },
+    // 获取二维码
+    getOffLoginQcode(){
+      this.QRcodeUUId = this.getUUId()
+      getOffLoginQcode(this.QRcodeUUId).then(res=>{
+        if(res.data.code==0){
+          this.OfficQrcodeUrl = res.data.data
+          this.isExpires = false
+          this.startCheckState()
+        }
+      })
+    },
+    // 检查登录状态
+    startCheckState(){
+      if(this.QRCheckSetInterval){
+        clearInterval(this.QRCheckSetInterval)
       }
+      if(this.QRChcekSetTimeout){
+        clearTimeout(this.QRChcekSetTimeout)
+      }
+      // this.QRChcekSetTimeout = setTimeout(()=>{
+      //   this.isExpires = true
+      //   if(this.QRCheckSetInterval){
+      //     clearInterval(this.QRCheckSetInterval)
+      //   }
+      // },1000 * 60 * 0.05)
+      this.QRCheckSetInterval = setInterval(()=>{
+        checkQrcodeState(this.QRcodeUUId).then(res=>{
+          if(res.data.code == 0 && res.data.data.checkStatus){
+            this.QRLoading = true
+            if(this.QRCheckSetInterval){
+              clearInterval(this.QRCheckSetInterval)
+            }
+            this.QRcodeLogin(this.QRcodeUUId)
+          }else if(res.data.code == 0 && res.data.data.isPastDue){
+            this.isExpires = true
+            if(this.QRCheckSetInterval){
+              clearInterval(this.QRCheckSetInterval)
+            }
+          }
+        })
+      },1000 * 2)
+    },
+    QRcodeLogin(id){
+      let tp = {
+        data: JSON.stringify(Object.assign({ id: id}))
+      }
+      let temp = encryption({
+        data: tp,
+        key: enCodeKey,
+        param: ["data"]
+      });
+      codeLogin(('WECHAT_MP@'+temp.data)).then(res=>{
+        this.getTenantByUserList(res.data)
+      })
+    },
+    getUUId(){
+      return URL.createObjectURL(new Blob()).substr(-36).replaceAll('-','')
     },
     handleClose () {
+      if(this.QRCheckSetInterval){
+        clearInterval(this.QRCheckSetInterval)
+      }
       this.submitLoading = false
       this.tenantLoading = false
       this.loginVisible = false
@@ -403,7 +497,6 @@ export default {
       if(this.loginTypes.indexOf(type) > -1) {
         bool = true
       }
-      bool = true // 直接给！！！！！！！！！！
       return bool
     },
     showPassword () {
@@ -413,6 +506,12 @@ export default {
     },
     // 切换登录方式
     changeType (type) {
+      if(this.QRCheckSetInterval){
+        clearInterval(this.QRCheckSetInterval)
+      }
+      if(type=='weixin' && this.wxType=='wxmp'){
+        this.getOffLoginQcode()
+      }
       if (type !== 'weixin' && this.$refs.QRCode) {
         this.$refs.QRCode.clear()
       }
@@ -622,7 +721,11 @@ export default {
     },
     // 刷新二维码
     freshWeixin () {
-      $('#weixinCode').attr('src', $('#weixinCode').attr('src'))
+      if(this.wxType == 'wxmp'){
+        this.getOffLoginQcode()
+      }else{
+        $('#weixinCode').attr('src', $('#weixinCode').attr('src'))
+      }
     },
     // 使用条款
     openRule () {
@@ -907,5 +1010,18 @@ export default {
       width: auto;
     }
   }
+}
+.expires-box{
+  position: absolute;
+  cursor: pointer;
+  width: 330px;
+  height: 330px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255,255,255,0.8);
+  color: black;
+  font-size: 16px;
+  font-weight: 600;
 }
 </style>

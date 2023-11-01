@@ -8,7 +8,7 @@
         </div>
       </el-input>
     </div>
-    <userSeletor ref="userSelector" :autoClose="true" :selectable="selectable" @submit="submit" @cancel="cancel"></userSeletor>
+    <userSeletor ref="userSelector" :autoClose="true" :selectable="selectable" :deptable="deptable" @submit="submit" @cancel="cancel"></userSeletor>
   </div>
 </template>
 
@@ -39,6 +39,12 @@ export default {
     },
     disabled: {
       type: Boolean
+    },
+    deptable: {
+      type: Boolean
+    },
+    props: {
+      type: Object
     },
     resetRadom: {
       type: Number
@@ -72,6 +78,10 @@ export default {
         if(list && list.length > 0) {
           this.form[this.prop] = list[0].id
           this.userStr = list[0].realName
+          if(this.props) {
+            this.form[this.props.label] = list[0].realName
+            this.form[this.props.value] = list[0].id
+          }
         }
       }
       this.$emit('change', this.form)
@@ -111,6 +121,11 @@ export default {
   created () {
     if(this.disabled === true) {
       this.disableBool = true
+    }
+    if(this.props) {
+      if(this.form[this.props.label]) {
+        this.userStr = this.form[this.props.label]
+      }
     }
   },
   watch: {

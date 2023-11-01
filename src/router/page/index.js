@@ -11,6 +11,18 @@ export default [{
         }
     },
     {
+        path: '/authorize',
+        component: () =>
+            import ( /* webpackChunkName: "page" */ '@/page/main/authorize/index'),
+        name: '授权页',
+        meta: {
+            keepAlive: true,
+            isTab: false,
+            isAuth: false
+        }
+
+    },
+    {
         path: '/404',
         component: () =>
             import ( /* webpackChunkName: "page" */ '@/components/error-page/404'),

@@ -93,7 +93,16 @@ export default {
   computed: {
     ...mapGetters(["website", "menu", "tag", "keyCollapse", "screen"]),
     nowTagValue: function () {
-      return this.$router.$jvsRouter.formatMenuPath(this.$route);
+      let str = this.$router.$jvsRouter.formatMenuPath(this.$route);
+      if(this.$route.hash && this.$route.hash.includes('dataModelId')) {
+        let tarr = this.$route.hash.split('?')[1].split('&')
+        for(let i in tarr) {
+          if(tarr[i].includes('id')) {
+            str = tarr[i].split('=')[1]
+          }
+        }
+      }
+      return str
     },
     ...mapState({
       showCollapse: state => state.common.showCollapse,

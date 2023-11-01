@@ -98,3 +98,20 @@ export const getKeyValue= () => {
       method: 'get'
   })
 }
+
+// 获取数据关联设置
+export const getModelSetting= (modelId) => {
+  return request({
+    url: `/mgr/jvs-design/data/model/setting/${modelId}`,
+    method: 'get'
+  })
+}
+
+// 修改数据关联设置
+export const updateModelSetting= (data, modelId) => {
+  return request({
+    url: `/mgr/jvs-design/data/model/setting/${modelId}`,
+    method: 'put',
+    data: data
+  })
+}

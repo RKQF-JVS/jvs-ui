@@ -19,12 +19,13 @@
         <jvs-button v-if="!item.editable && item.addBtn" size="mini" type="primary" @click="showForm(item, 'add')">新增</jvs-button>
       </template>
       <template v-for="(item, index) in options.tableColumn" :slot="item.prop" slot-scope="scope">
-        <div :key="item.prop+'node'+index">
+        <div :key="item.prop+'node'+index+index+scope.index">
           <div v-if="item.text && item.text.label && scope.row[item.prop] == item.text.value" :key="item.prop+'text'">
             <span>{{item.text.label}}</span>
           </div>
           <div v-if="item.needSlot !== true && !(item.text && item.text.label && scope.row[item.prop] == item.text.value) && displayByBind(item, scope.row)" :key="item.prop+'item'">
             <tableFormItem
+              :tableRowAIndex="scope.index"
               :style="'justify-content:'+ (options.align == 'center' ? 'center' : 'flex-start')"
               :form="scope.row"
               :item="item"
@@ -41,16 +42,22 @@
         </div>
       </template>
     </jvs-table>
+    <formDialog ref="formDialog" :title="title" @submit="childFormSubmit"></formDialog>
   </div>
 </template>
 <script>
 import {getSelectData} from '@/api/index'
 import {sendMyRequire} from '@/api/newDesign'
+import formDialog from '@/plugin/components/dialogInfo'
+import {getSystemDictItems, getClassifyDictTree} from '@/api/newDesign'
+import {getDeptList, getRoleList, getPostList} from '../api'
+import {areaList} from '@/const/chinaArea.js'
 export default {
   name: 'table-Form',
   components: {
     // 异步import，formitem引用了tableForm，嵌套时异步引用
     tableFormItem: () => import('@/components/basic-assembly/formitem'),
+    formDialog
   },
   props: {
     item: {
@@ -166,7 +173,20 @@ export default {
   },
   methods: {
     init () {
+      let deptBool = false
+      let roleBool = false
+      let postBool = false
       for(let i in this.options.tableColumn) {
+        if(this.options.tableColumn[i].type == 'department') {
+          deptBool = true
+        }
+        if(this.options.tableColumn[i].type == 'role') {
+          roleBool = true
+        }
+        if(this.options.tableColumn[i].type == 'post') {
+          postBool = true
+        }
+        // 接口字典
         if(this.options.tableColumn[i].dicUrl) {
           getSelectData(this.options.tableColumn[i].dicUrl).then(res => {
             if(res.data.code == 0) {
@@ -186,6 +206,42 @@ export default {
             }
           })
         }
+        // 系统字典
+        if(this.options.tableColumn[i].datatype == 'system' && this.options.tableColumn[i].systemDict) {
+          getSystemDictItems(this.options.tableColumn[i].systemDict).then(res => {
+            if(res.data.code == 0) {
+              this.options.tableColumn[i].dicData = []
+               for(let sitem in res.data.data){
+                if(typeof res.data.data[sitem] == 'string') {
+                  this.options.tableColumn[i].dicData.push({
+                    label: res.data.data[sitem],
+                    value: res.data.data[sitem]
+                  })
+                }else{
+                  this.options.tableColumn[i].dicData.push({
+                    label: res.data.data[sitem][this.options.tableColumn[i].props.label ? this.options.tableColumn[i].props.label : 'label'],
+                    value: res.data.data[sitem][this.options.tableColumn[i].props.value ? this.options.tableColumn[i].props.value : 'value']
+                  })
+                }
+              }
+            }
+          })
+        }
+        // 级联选择类
+        if(this.options.tableColumn[i].type == 'cascader' && this.options.tableColumn[i].dictName) {
+          getClassifyDictTree(this.options.tableColumn[i].dictName).then(res => {
+            if(res.data.code == 0 && res.data.data && res.data.data.children) {
+              this.options.tableColumn[i].dicData = res.data.data.children
+              this.options.tableColumn[i].emitKey = 'uniqueName'
+              this.options.tableColumn[i].props = {
+                label: 'name',
+                value: 'uniqueName',
+                children: 'children'
+              }
+            }
+          })
+        }
+        // 配置字典
         if(this.options.tableColumn[i].dicData) {
           let temp = []
           let bool = false
@@ -202,6 +258,68 @@ export default {
             this.options.tableColumn[i].dicData = temp
           }
         }
+        // 上传
+        if(['imageUpload', 'fileUpload'].indexOf(this.options.tableColumn[i].type) > -1) {
+          this.options.tableColumn[i].parent = this.item
+        }
+        // 地区回显
+        if(this.options.tableColumn[i].type == 'chinaArea') {
+          this.options.tableColumn[i].dicData = areaList
+          this.options.tableColumn[i].props = {
+            label: 'name',
+            value: this.options.tableColumn[i].emitKey ? this.options.tableColumn[i].emitKey : 'code',
+            children: 'children'
+          }
+        }
+      }
+      // 部门回显
+      if(deptBool) {
+        getDeptList().then(res => {
+          if(res.data.code == 0) {
+            for(let i in this.options.tableColumn) {
+              if(this.options.tableColumn[i].type == 'department') {
+                this.options.tableColumn[i].props = {
+                  label: 'name',
+                  value: 'id',
+                  children: 'childList'
+                }
+                this.options.tableColumn[i].dicData = res.data.data
+              }
+            }
+          }
+        })
+      }
+      // 角色回显
+      if(roleBool) {
+        getRoleList().then(res => {
+          if(res.data.code == 0) {
+            for(let i in this.options.tableColumn) {
+              if(this.options.tableColumn[i].type == 'role') {
+                this.options.tableColumn[i].props = {
+                  label: 'roleName',
+                  value: 'id',
+                }
+                this.options.tableColumn[i].dicData = res.data.data
+              }
+            }
+          }
+        })
+      }
+      // 岗位回显
+      if(postBool) {
+        getPostList().then(res => {
+          if(res.data.code == 0) {
+            for(let i in this.options.tableColumn) {
+              if(this.options.tableColumn[i].type == 'post') {
+                this.options.tableColumn[i].props = {
+                  label: 'name',
+                  value: 'id'
+                }
+                this.options.tableColumn[i].dicData = res.data.data
+              }
+            }
+          }
+        })
       }
     },
     // 下拉选择change

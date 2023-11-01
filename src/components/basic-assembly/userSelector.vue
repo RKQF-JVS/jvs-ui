@@ -182,7 +182,11 @@ export default {
       searchUser(obj).then(res => {
         if(res.data.code == 0) {
           if(this.deptable) {
-            this.userOptionList = [...[{id: this.selectOneData.id, realName: this.selectOneData.name, type: 'dept'}], ...res.data.data]
+            if(this.selectOneData && this.selectOneData.id) {
+              this.userOptionList = [...[{id: this.selectOneData.id, realName: this.selectOneData.name, type: 'dept'}], ...res.data.data]
+            }else{
+              this.userOptionList = [...res.data.data]
+            }
           }else{
             this.userOptionList = res.data.data
           }

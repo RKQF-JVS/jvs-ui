@@ -144,15 +144,48 @@ export function toThousandslsFilter (num) {
 /* 字典 格式化 */
 export function dicFormat (val, options, props) {
   let temp = ''
+  let tpArr = []
   temp = val
-  for(let i in options) {
-    let dicitem = options[i][(props && props.value) || 'value']
-    if(['number', 'boolean'].indexOf(typeof val) > -1 && ['number', 'boolean'].indexOf(typeof dicitem) > -1) {
-      dicitem = eval(dicitem)
+  // 树形字典
+  if(props && props.children) {
+    recursionTree(options, val, props, tpArr, props.label)
+    temp = tpArr.join('/')
+  }else{
+    // 普通字典
+    for(let i in options) {
+      let dicitem = options[i][(props && props.value) || 'value']
+      if(['number', 'boolean'].indexOf(typeof val) > -1 && ['number', 'boolean'].indexOf(typeof dicitem) > -1) {
+        dicitem = eval(dicitem)
+      }
+      if(typeof val == 'object' && val instanceof Array) {
+        if(val.indexOf(dicitem) > -1) {
+          tpArr.push(options[i][(props && props.label) || 'label'])
+        }
+      }else{
+        if(dicitem == val) {
+          temp = options[i][(props && props.label) || 'label']
+        }
+      }
     }
-    if(dicitem == val) {
-      temp = options[i][(props && props.label) || 'label']
+    if(typeof val == 'object' && val instanceof Array) {
+      temp = tpArr.join(',')
     }
   }
   return temp
+}
+function recursionTree (list, val, props, temp, attr) {
+  for(let i in list) {
+    if(typeof val == 'object' && val instanceof Array) {
+      if(val.indexOf(list[i][props.value]) > -1) {
+        temp.push(list[i][attr])
+      }
+    }else{
+      if(list[i][props.value] == val) {
+        temp.push(list[i][attr])
+      }
+    }
+    if(list[i][props.children] && list[i][props.children].length > 0) {
+      recursionTree(list[i][props.children], val, props, temp, attr)
+    }
+  }
 }

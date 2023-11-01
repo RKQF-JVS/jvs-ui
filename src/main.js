@@ -42,8 +42,10 @@ import vueHljs from "vue-hljs";
 import hljs from "highlight.js";
 //if you want to use default color, import this css file
 import "vue-hljs/dist/style.css";
+import codeArea from '@/views/document/views/index/component/codeEditor'
 Vue.use(vueHljs, { hljs })
 hljs.highlightAll()
+Vue.component('codeArea', codeArea)
 Vue.use(vuescroll); //使用
 
 Vue.use(VueAxios, axios);

@@ -36,6 +36,7 @@
     "vue-codemirror": "^4.0.6",
     "vue-draggable-resizable": "^2.3.0",
     "vue-draggable-resizable-gorkys": "^2.4.4",
+    "vue-grid-layout": "^2.3.9",
     "vue-hljs": "^2.0.0",
     "vue-marquee-tips": "^1.0.8",
     "vue-router": "^3.1.3",

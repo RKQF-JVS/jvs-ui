@@ -22,6 +22,16 @@
     </jvs-table>
     <div class="role-tree">
       <div class="el-tree">
+        <div :class="{'el-tree-node ': true, 'is-current': !roleId}">
+          <div class="el-tree-node__content" @click="roleHandleClick(null)" style="padding-left: 24px;">
+            <span class="customize-tree-node">
+              <span>
+                <i></i>
+                <span class="customize-tree-node-label">全部</span>
+              </span>
+            </span>
+          </div>
+        </div>
         <div v-for="data in roleLsit" :key="'role-item-'+data.id" :class="{'el-tree-node ': true, 'is-current': (roleId == data.id)}">
           <div class="el-tree-node__content" @click="roleHandleClick(data)">
             <span class="is-leaf el-tree-node__expand-icon el-icon-caret-right"></span>
@@ -225,11 +235,13 @@ export default {
     },
     roleHandleClick (data, node, dom) {
       this.page.currentPage = 1
-      if(this.roleId == data.id) {
-        this.roleId = ""
-        this.$forceUpdate()
-      }else{
-        this.roleId = data.id
+      if(data) {
+        if(this.roleId == data.id) {
+          this.roleId = ""
+          this.$forceUpdate()
+        }else{
+          this.roleId = data.id
+        }
       }
       this.getList()
     },
@@ -465,12 +477,12 @@ export default {
 .role-list-box{
   .role-tree {
     position: absolute;
-    //top: 134px;
-    top: 94px;
+    //top: 94px;
+    top: 72px;
     left: 0;
     width: 250px;
-    //height: calc(100% - 134px);
-    height: calc(100% - 94px);
+    //height: calc(100% - 94px);
+    height: calc(100% - 72px);
     overflow: hidden;
     overflow-y: auto;
     padding-left: 20px;

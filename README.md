@@ -24,6 +24,10 @@ JVS是“软开企服”推出的面向软件开发团队可以快速实现应�
 
 框架后端地址：https://github.com/RKQF-JVS/jvs
 
+## 部署视频
+
+https://www.bilibili.com/video/BV15e411u7wQ?share_source=copy_web&vd_source=84d509be6d513ddc55eb13d4bd45cf90
+
 ## **体验地址**
 
 开源协议：详见license
@@ -92,5 +96,4 @@ JVS是“软开企服”推出的面向软件开发团队可以快速实现应�
 
 个人微信号：ruanjbz
 
-![输入图片说明](img/image20220821.png)
-
+![输入图片说明](https://guanwang-2022.oss-cn-chengdu.aliyuncs.com/%E7%BE%A4%E4%BA%8C%E7%BB%B4%E7%A0%81.png)
