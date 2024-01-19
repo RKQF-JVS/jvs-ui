@@ -116,7 +116,8 @@ https://www.bilibili.com/video/BV15e411u7wQ?share_source=copy_web&vd_source=84d5
 
 
 
-![群二维码](https://github.com/RKQF-JVS/jvs-ui/assets/94048608/601d7001-9d0c-45ff-934c-eeb5bfbeef58)
+![群二维码](https://github.com/RKQF-JVS/jvs-ui/assets/94048608/fd76bfa3-cbd2-4713-a5c5-4130e4bc4ac2)
+
 
 
 
