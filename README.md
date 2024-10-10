@@ -114,7 +114,8 @@ https://www.bilibili.com/video/BV15e411u7wQ?share_source=copy_web&vd_source=84d5
 
 ### 技术交流与商务支持
 
-![群二维码](https://github.com/RKQF-JVS/jvs-ui/assets/94048608/ad42563f-cd74-4db7-bc98-53d79ea00e9f)
+![微信截图_20241009183836](https://github.com/user-attachments/assets/2d11ae46-3626-40f4-8b62-1f474bca24d4)
+
 
 
 
