@@ -42,6 +42,7 @@
 - 规则引擎：http://rules.bctools.cn/
 - 逻辑引擎：http://logic.bctools.cn/
 - 视频会议：http://meeting.bctools.cn/
+- APS（智能排产）：https://aps.bctools.cn/
 
 
 
@@ -114,7 +115,8 @@ https://www.bilibili.com/video/BV15e411u7wQ?share_source=copy_web&vd_source=84d5
 
 ### 技术交流与商务支持
 
-![微信截图_20241009183836](https://github.com/user-attachments/assets/2d11ae46-3626-40f4-8b62-1f474bca24d4)
+![微信图片_20250211100806](https://github.com/user-attachments/assets/307f7e1f-3d19-4006-a08d-d86707827a78)
+
 
 
 
