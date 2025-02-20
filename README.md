@@ -115,7 +115,8 @@ https://www.bilibili.com/video/BV15e411u7wQ?share_source=copy_web&vd_source=84d5
 
 ### 技术交流与商务支持
 
-![小微信图片_20250213171647](https://github.com/user-attachments/assets/42938a30-a743-452d-b55f-d961b7655e24)
+![微信图片_20250220101551](https://github.com/user-attachments/assets/19905190-1165-44a4-93ad-271c53474638)
+
 
 
 
